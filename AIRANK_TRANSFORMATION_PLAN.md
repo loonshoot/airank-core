@@ -1,402 +1,364 @@
-# AIRank Core Transformation Plan
+# AIRank App Transformation Plan
 
 ## 🎯 Project Overview
-Transform outrun-core into AIRank-core: a focused brand monitoring and sentiment analysis backend that processes prompts through multiple LLM services and analyzes responses for brand mentions and sentiment.
+Transform outrun-app into AIRank-app: a focused brand monitoring frontend that provides users with setup wizards, analytics dashboards, and prompt management for multi-LLM brand sentiment analysis.
 
-## 🤖 Frontend Instruction Generation System
+## 🎨 Brand Identity & Design System
 
-### NEW Job: `jobs/frontendInstructionGenerator.js`
-
-This job analyzes the airank-app repository state and generates specific, actionable development tasks based on the frontend transformation plan.
-
-#### Purpose:
-- Automatically generate frontend development tasks
-- Provide step-by-step instructions with code examples  
-- Track transformation progress
-- Prioritize tasks based on dependencies
-- Output structured development guidance
-
-#### Input Sources:
-1. **Frontend Transformation Plan** - The detailed roadmap
-2. **Current Codebase State** - Git analysis of existing files
-3. **Completed Tasks** - Previously finished development work
-4. **User Requirements** - Workspace setup and preferences
-
-#### Output Format:
-```javascript
-{
-  taskId: "FE_001",
-  phase: "Phase 1 - Cleanup",
-  component: "Remove Workflow Components", 
-  priority: "high", // high, medium, low
-  status: "pending", // pending, in_progress, completed
-  estimatedHours: 4,
-  dependencies: [],
-  instructions: {
-    title: "Remove unused workflow components",
-    description: "Clean up workflow-related components not needed in AIRank",
-    steps: [
-      {
-        action: "delete",
-        target: "src/app/[workspaceSlug]/workflow/",
-        reason: "Workflow functionality not needed in AIRank"
-      },
-      {
-        action: "delete", 
-        target: "src/components/Canvas/",
-        reason: "Canvas components only used for workflows"
-      },
-      {
-        action: "update",
-        target: "src/components/Sidebar/menu.js",
-        code: `const menuItems = [
-  { name: 'Reporting', href: '/reporting', icon: ChartBarIcon },
-  { name: 'Prompts', href: '/prompts', icon: ChatBubbleIcon },
-  { name: 'Competitors', href: '/competitors', icon: BuildingOfficeIcon }
-];`,
-        reason: "Simplify navigation to core AIRank features"
-      }
-    ],
-    testingNotes: "Ensure no broken imports remain after deletion",
-    documentation: "Update README.md to reflect removed features"
-  },
-  nextSuggestedTask: "FE_002"
+### Color Scheme
+```css
+:root {
+  --color-paragraph: #211A1D;      /* Main text */
+  --color-brand: #51F72B;          /* Primary brand color */
+  --color-alt: #37B91A;            /* Subtitles & alts */
+  --color-background: #F8F0FB;     /* Main background */
+  --color-secondary: #CBD6D3;      /* Secondary elements */
+  --color-accent: #43B929;         /* Additional accents */
 }
 ```
 
-#### Generated Task Categories:
-1. **Cleanup Tasks** - Remove unused files/components
-2. **Styling Tasks** - Implement AIRank color scheme and branding
-3. **Component Tasks** - Create new React components (charts, forms, cards)
-4. **Page Tasks** - Build setup wizard and dashboard pages
-5. **API Integration** - Connect to new GraphQL endpoints
-6. **Testing Tasks** - Add comprehensive test coverage
+### Subscription Plans
+- **Small**: $99/month - 5 prompts, weekly execution
+- **Medium**: $199/month - 25 prompts, weekly execution  
+- **Large**: $299/month - 50 prompts, daily execution
+- **XL**: $499/month - 500 prompts, daily execution
 
-#### New GraphQL Endpoints:
+## 📋 Implementation Steps
 
-```graphql
-# Get pending frontend development tasks
-query GetFrontendTasks($phase: String, $priority: String) {
-  frontendTasks(phase: $phase, priority: $priority) {
-    taskId
-    phase
-    component
-    priority
-    instructions {
-      title
-      description
-      steps {
-        action
-        target
-        code
-        reason
-      }
-    }
-    estimatedHours
-    dependencies
-  }
-}
+### Phase 1: Project Cleanup & Rebranding
+**Goal**: Remove unused code and implement new branding
 
-# Mark task as completed
-mutation CompleteFrontendTask($taskId: String!, $completionNotes: String) {
-  completeFrontendTask(taskId: $taskId, notes: $completionNotes) {
-    success
-    nextTask {
-      taskId
-      title
-    }
-    progressUpdate {
-      phaseCompletion
-      totalProgress
-    }
-  }
-}
+- [ ] **Update project metadata**:
+  - Change `package.json` name to "airank-app"
+  - Update descriptions and keywords
+  - Modify `README.md` with AIRank branding
 
-# Get transformation progress overview
-query GetTransformationProgress {
-  frontendProgress {
-    totalTasks
-    completedTasks
-    currentPhase
-    blockedTasks
-    nextPriorityTask {
-      taskId
-      title
-      priority
-    }
-  }
-}
-```
+- [ ] **Remove unused directories/files**:
+  - `src/app/[workspaceSlug]/sources/` - Source management (not needed)
+  - `src/app/[workspaceSlug]/destinations/` - Destination management (not needed)
+  - `src/app/[workspaceSlug]/workflow/` - Workflow builder (not needed)
+  - `src/pages/[workspaceSlug]/data/` - Data explorer (not needed)
+  - `src/pages/[workspaceSlug]/streams/` - Stream management (not needed)
+  - `src/components/Canvas/` - Workflow canvas components (not needed)
+  - `src/components/QueryBuilder.js` - Query builder (not needed)
 
-#### Database Schema Addition:
-```javascript
-// Add to config/data/models.js
-FrontendTask: {
-  id: String,
-  taskId: String,
-  phase: String,
-  component: String,
-  priority: String, // high, medium, low
-  status: String, // pending, in_progress, completed, blocked
-  instructions: {
-    title: String,
-    description: String,
-    steps: [{
-      action: String, // delete, create, update
-      target: String, // file path
-      code: String, // generated code
-      reason: String // explanation
-    }],
-    testingNotes: String,
-    documentation: String
-  },
-  estimatedHours: Number,
-  dependencies: [String], // taskIds
-  completionNotes: String,
-  createdAt: Date,
-  completedAt: Date,
-  nextSuggestedTask: String
-}
-```
+- [ ] **Update styling system**:
+  - Modify `tailwind.config.js` with new color palette
+  - Update `src/styles/globals.css` with new design tokens
+  - Create `src/styles/airank-theme.css` for brand-specific styles
 
-#### Scheduling:
-- **Daily**: 9 AM - Check for new requirements and generate tasks
-- **On-demand**: When user completes setup wizard
-- **Event-driven**: When backend schema changes
-- **Progress-driven**: When dependencies are completed
+### Phase 2: Navigation & Layout Restructure
+**Goal**: Simplify navigation to focus on core features
 
-#### Integration with Development Workflow:
-1. **Morning Standup**: Developers query for high-priority tasks
-2. **Task Completion**: Mark tasks complete and get next suggestions
-3. **Dependency Management**: System prevents starting tasks with incomplete dependencies
-4. **Progress Tracking**: Real-time progress updates across transformation
-5. **Code Generation**: Tasks include generated code snippets to accelerate development
+- [ ] **Update sidebar navigation** (`src/components/Sidebar/`):
+  - **Keep**: Settings (admin, billing, user, account)
+  - **Replace with**:
+    - 📊 Reporting (dashboard/analytics)
+    - 💬 Prompts (prompt management)  
+    - 🏢 Competitors (brand/competitor management)
 
-## 📋 Core Implementation Steps
+- [ ] **Clean up layout components**:
+  - Update `src/layouts/GridLayout.js` for new navigation
+  - Modify `src/components/Header/` for AIRank branding
+  - Update workspace-level layouts
 
-### Phase 1: Clean Architecture
-**Goal**: Remove unnecessary services and simplify codebase
+### Phase 3: Setup Wizard Implementation
+**Goal**: Create guided onboarding experience
 
-- [ ] **Remove unused services**:
-  - `listener/` - Event-driven workflow listener (not needed)
-  - `mcp/` - MCP server (not needed) 
-  - `stream/` - Data streaming service (not needed)
-  - `workflows/` - Workflow execution engine (not needed)
+**Create Directory**: `src/app/[workspaceSlug]/setup/`
 
-- [ ] **Clean up common directory**:
-  - Remove `common/schemas/workflow.js`
-  - Keep `common/utils/rateLimiter.js` (useful for API rate limiting)
-  - Remove consolidation jobs in `config/common/`
+#### Wizard Steps
+- [ ] **Step 1**: `brand/page.jsx` - Add primary brand
+  - Form to input brand name
+  - Brand description (optional)
+  - Industry selection dropdown
+  
+- [ ] **Step 2**: `competitors/page.jsx` - Add competitor brands
+  - Add multiple competitor names
+  - Drag & drop reordering
+  - Skip option for later setup
 
-- [ ] **Update configuration**:
-  - Modify database connection strings to use `airank` database
-  - Simplify `docker-compose.yml` to only include: api-gateway, graphql, batcher
-  - Update `app-spec.yaml` to reflect new services
+- [ ] **Step 3**: `prompts/page.jsx` - Create monitoring prompts
+  - Pre-generated prompt templates based on industry
+  - Custom prompt creation
+  - Plan-based prompt limits display
+  - Preview functionality
 
-### Phase 2: Database Schema Development
-**Goal**: Create new data models for brand monitoring
+- [ ] **Step 4**: `llms/page.jsx` - Select LLM providers
+  - Checkbox selection of available LLMs (OpenAI, Anthropic, Google, etc.)
+  - API key configuration
+  - Rate limit information
 
-**Location**: `config/data/models.js`
+- [ ] **Step 5**: `complete/page.jsx` - Setup completion
+  - Summary of configuration
+  - First job scheduling
+  - "Go to Dashboard" button
 
-```javascript
-// New Models to Add:
-- Brand: { id, name, workspaceId, isCompetitor, createdAt, updatedAt }
-- Prompt: { id, text, brandId, workspaceId, frequency, active, llmProviders, createdAt }
-- LLMResponse: { id, promptId, brandId, response, sentiment, mentions, date, llmProvider }
-- LLMProvider: { id, name, endpoint, apiKey, active, rateLimit }
-- Analytics: { id, workspaceId, date, brandMentions, sentiment, competitorData }
-- FrontendTask: { id, taskId, phase, component, priority, status, instructions, estimatedHours, dependencies, completionNotes, createdAt, completedAt, nextSuggestedTask }
-```
+#### Supporting Components
+- [ ] **Wizard Layout**: `layout.jsx`
+  - Progress indicator (1 of 5, 2 of 5, etc.)
+  - Navigation between steps
+  - Save & continue later functionality
 
-### Phase 3: GraphQL API Restructure
-**Goal**: Simplify API to focus on brand monitoring features
+### Phase 4: Core Pages Development
 
-**Keep These Endpoints**:
-- `queries/workspace/` - Workspace management
-- `mutations/createWorkspace/`, `mutations/updateWorkspace/` - Workspace CRUD
-- `queries/token/` - Authentication
-- `mutations/createApiKey/`, `mutations/updateApiKey/` - API key management
+#### Dashboard/Reporting Page
+**Location**: `src/app/[workspaceSlug]/page.jsx`
 
-**Remove These Endpoints**:
-- All workflow-related queries/mutations
-- All source/destination endpoints
-- Stream routes
-- Job scheduling (replace with new system)
+- [ ] **Key Metrics Cards**:
+  - Total brand mentions this period
+  - Sentiment score (positive/negative percentage)
+  - Top performing prompts
+  - Competitor comparison summary
 
-**Create New Endpoints**:
+- [ ] **Charts & Visualizations**:
+  - Sentiment trend over time (line chart)
+  - Brand mentions vs competitors (bar chart)  
+  - Prompt performance heatmap
+  - Weekly/monthly comparison
 
-#### Brand Management
-- `queries/brands/index.js` - Get all brands and competitors for workspace
-- `mutations/createBrand/index.js` - Add new brand or competitor
-- `mutations/updateBrand/index.js` - Update brand details
-- `mutations/deleteBrand/index.js` - Remove brand
+- [ ] **Recent Activity Feed**:
+  - Latest LLM responses
+  - Sentiment alerts
+  - Competitor mention notifications
 
-#### Prompt Management
-- `queries/prompts/index.js` - Get all prompts for workspace
-- `mutations/createPrompt/index.js` - Create prompt (auto-creates jobs)
-- `mutations/updatePrompt/index.js` - Update prompt and reschedule jobs
-- `mutations/deletePrompt/index.js` - Delete prompt and cancel jobs
+#### Prompts Management Page
+**Location**: `src/app/[workspaceSlug]/prompts/`
 
-#### Analytics & Reporting
-- `queries/analytics/index.js` - Get dashboard analytics data
-- `queries/reports/index.js` - Get detailed reports by date range
+- [ ] **Prompt List View**:
+  - All prompts with status (active/paused)
+  - Last run date and next scheduled run
+  - Performance metrics (mentions found, sentiment)
+  - Quick actions (pause, edit, delete)
 
-#### LLM Provider Management
-- `queries/llmProviders/index.js` - Get available LLM services
-- `mutations/updateLLMProvider/index.js` - Configure LLM API keys
+- [ ] **Add/Edit Prompt Form**:
+  - Rich text editor for prompt creation
+  - Brand placeholder insertion `[BRAND]`, `[COMPETITORS]`
+  - LLM provider selection (multi-select)
+  - Frequency settings (based on plan)
 
-#### Frontend Task Management
-- `queries/frontendTasks/index.js` - Get pending frontend development tasks
-- `mutations/completeFrontendTask/index.js` - Mark task as completed
-- `queries/frontendProgress/index.js` - Get transformation progress overview
+- [ ] **Prompt Templates**:
+  - Industry-specific template library
+  - Community-shared prompts
+  - Template customization
 
-### Phase 4: Job System Overhaul
-**Goal**: Replace complex workflow system with focused LLM processing jobs
+#### Competitors/Brands Management Page
+**Location**: `src/app/[workspaceSlug]/competitors/`
 
-**Remove**: All existing jobs in various directories
+- [ ] **Brand Overview**:
+  - Primary brand performance summary
+  - Edit brand details
+  - Brand mention analytics
 
-**Create New Jobs**:
+- [ ] **Competitor List**:
+  - All tracked competitors
+  - Performance comparison table
+  - Add/remove competitors
+  - Competitor mention trends
 
-#### Core Processing Jobs
-- `jobs/promptExecutor.js`
-  - Sends prompts to selected LLM services
-  - Handles rate limiting and error retry
-  - Stores raw responses in database
+- [ ] **Competitive Analysis**:
+  - Side-by-side brand comparison
+  - Sentiment comparison charts
+  - Market share of voice analysis
 
-- `jobs/sentimentAnalyzer.js`
-  - Analyzes LLM responses for sentiment (positive/negative/neutral)
-  - Uses secondary LLM call for sentiment analysis
-  - Stores sentiment scores and reasoning
+### Phase 5: Components Development
 
-- `jobs/brandMentionDetector.js`
-  - Scans responses for brand and competitor mentions
-  - Counts frequency of mentions
-  - Categorizes mention context
+#### Chart Components
+**Location**: `src/components/Charts/`
 
-- `jobs/dailyReportGenerator.js`
-  - Aggregates daily analytics
-  - Generates summary reports
-  - Triggers notification emails
+- [ ] **SentimentChart.jsx**:
+  - Line chart showing sentiment over time
+  - Positive/negative/neutral breakdown
+  - Interactive tooltips with details
 
-- `jobs/frontendInstructionGenerator.js`
-  - Analyzes the airank-app repository state and generates specific, actionable development tasks
+- [ ] **MentionTrendChart.jsx**:
+  - Area chart of brand mentions
+  - Multiple brand comparison
+  - Date range picker integration
 
-#### Scheduling Jobs
-- `jobs/scheduledPromptRunner.js`
-  - Runs prompts based on user's plan frequency
-  - Manages plan-based limits
-  - Queues individual prompt execution jobs
+- [ ] **CompetitorComparisonChart.jsx**:
+  - Horizontal bar chart
+  - Sentiment scores comparison
+  - Market share visualization
 
-### Phase 5: LLM Service Integration
-**Goal**: Create standardized integrations with major LLM providers
+#### Form Components
+**Location**: `src/components/Forms/`
 
-**Create Directory**: `config/providers/llm/`
+- [ ] **PromptForm.jsx**:
+  - Rich text input with brand placeholders
+  - LLM provider multi-select
+  - Frequency selector with plan limits
+  - Preview mode
 
-#### Provider Integrations
-- `openai.js` - GPT-4, GPT-3.5-turbo integration
-- `anthropic.js` - Claude integration  
-- `google.js` - Gemini Pro integration
-- `meta.js` - Llama integration
-- `microsoft.js` - Azure OpenAI integration
+- [ ] **BrandForm.jsx**:
+  - Brand name input with validation
+  - Industry dropdown
+  - Competitor flag toggle
+  - Logo upload (optional)
 
-#### Service Abstraction
-- `llmServiceManager.js` - Unified interface for all providers
-- `responseProcessor.js` - Standardizes response formats
-- `rateLimitManager.js` - Handles provider-specific rate limits
+#### Card Components
+**Location**: `src/components/Cards/`
 
-### Phase 6: Batcher Enhancement
-**Goal**: Update job scheduling for new prompt-based system
+- [ ] **MetricCard.jsx**:
+  - Reusable metric display
+  - Trend indicators (up/down arrows)
+  - Click-through actions
 
-**Updates to `batcher/`**:
-- Add support for frequency-based scheduling (weekly/daily)
-- Implement plan-based job limiting
-- Add priority queuing for different subscription tiers
-- Create job monitoring and failure handling
-- Schedule frontend instruction generation
+- [ ] **PromptCard.jsx**:
+  - Prompt preview with truncation
+  - Status indicators
+  - Quick action buttons
 
-### Phase 7: Database Migration
-**Goal**: Update MongoDB collections and indexes
+### Phase 6: GraphQL Integration
+**Goal**: Connect frontend to new backend APIs
 
-**Collections to Create**:
-- `brands` - Brand and competitor data
-- `prompts` - User prompts and configuration
-- `llm_responses` - Raw LLM responses
-- `analytics` - Processed analytics data
-- `llm_providers` - LLM service configurations
+#### API Operations Files
+**Location**: `src/graphql/`
 
-**Indexes to Add**:
-- `brands`: `{ workspaceId: 1, isCompetitor: 1 }`
-- `prompts`: `{ workspaceId: 1, active: 1 }`
-- `llm_responses`: `{ promptId: 1, date: -1 }`
-- `analytics`: `{ workspaceId: 1, date: -1 }`
+- [ ] **brand-operations.js**:
+  ```javascript
+  GET_BRANDS, CREATE_BRAND, UPDATE_BRAND, DELETE_BRAND
+  ```
+
+- [ ] **prompt-operations.js**:
+  ```javascript
+  GET_PROMPTS, CREATE_PROMPT, UPDATE_PROMPT, DELETE_PROMPT
+  ```
+
+- [ ] **analytics-operations.js**:
+  ```javascript
+  GET_ANALYTICS, GET_SENTIMENT_TRENDS, GET_COMPETITOR_COMPARISON
+  ```
+
+- [ ] **llm-operations.js**:
+  ```javascript
+  GET_LLM_PROVIDERS, UPDATE_LLM_CONFIG
+  ```
+
+#### Custom Hooks
+**Location**: `src/hooks/`
+
+- [ ] **useBrands.js**: Brand management hook
+- [ ] **usePrompts.js**: Prompt CRUD operations  
+- [ ] **useAnalytics.js**: Dashboard data fetching
+- [ ] **useSetupWizard.js**: Wizard state management
+
+### Phase 7: Authentication & Routing Updates
+
+#### Setup Wizard Integration
+- [ ] **Middleware Enhancement** (`src/middleware.js`):
+  - Check setup completion status
+  - Redirect incomplete setups to wizard
+  - Prevent app access until setup complete
+
+- [ ] **Setup Status Tracking**:
+  - Add `setupCompleted` field to user/workspace model
+  - Track which wizard steps are completed
+  - Allow resuming partial setups
+
+#### Plan-Based Access Control
+- [ ] **Plan Enforcement**:
+  - Prompt creation limits based on subscription
+  - Feature gating for higher tiers
+  - Usage tracking and warnings
+
+### Phase 8: Billing & Subscription Updates
+
+#### Pricing Configuration
+**Location**: `src/config/subscription-rules/`
+
+- [ ] **Update plan definitions**:
+  ```javascript
+  const PLANS = {
+    small: { price: 99, prompts: 5, frequency: 'weekly' },
+    medium: { price: 199, prompts: 25, frequency: 'weekly' },
+    large: { price: 299, prompts: 50, frequency: 'daily' },
+    xl: { price: 499, prompts: 500, frequency: 'daily' }
+  };
+  ```
+
+#### Billing UI Updates
+- [ ] **Subscription management page**:
+  - Current plan display with usage metrics
+  - Upgrade/downgrade options
+  - Usage warnings and limits
+  - Billing history
+
+### Phase 9: User Experience Enhancements
+
+#### Onboarding & Help
+- [ ] **Welcome Tour**: Interactive product tour after setup
+- [ ] **Help Documentation**: In-app help system
+- [ ] **Template Library**: Prompt templates with examples
+- [ ] **Success Metrics**: Show user value (mentions found, insights gained)
+
+#### Performance Optimizations
+- [ ] **Lazy Loading**: Code splitting for large components
+- [ ] **Caching**: Apollo cache optimization for dashboard data
+- [ ] **Progressive Enhancement**: Core functionality without JS
 
 ## 🔧 Technical Specifications
 
-### API Response Formats
-```javascript
-// Brand Response
-{
-  id: "brand_123",
-  name: "MyBrand",
-  workspaceId: "workspace_456", 
-  isCompetitor: false,
-  createdAt: "2024-01-01T00:00:00Z"
-}
-
-// Prompt Response  
-{
-  id: "prompt_789",
-  text: "What are people saying about [BRAND] in the tech industry?",
-  brandId: "brand_123",
-  frequency: "weekly", // weekly, daily
-  llmProviders: ["openai", "anthropic"],
-  active: true
-}
-
-// Analytics Response
-{
-  date: "2024-01-01",
-  brandMentions: 15,
-  sentiment: { positive: 10, negative: 3, neutral: 2 },
-  competitorMentions: { "Competitor1": 8, "Competitor2": 12 },
-  summary: "Positive sentiment trending up 15% this week"
-}
+### Component Structure
+```
+src/
+├── app/
+│   └── [workspaceSlug]/
+│       ├── setup/               # Setup wizard
+│       ├── prompts/            # Prompt management
+│       ├── competitors/        # Brand/competitor management  
+│       └── page.jsx           # Dashboard
+├── components/
+│   ├── Charts/                # Data visualization
+│   ├── Forms/                 # Form components
+│   ├── Cards/                 # Metric & data cards
+│   └── Wizard/                # Setup wizard components
+└── hooks/
+    ├── useBrands.js
+    ├── usePrompts.js
+    └── useAnalytics.js
 ```
 
-### Job Scheduling Logic
-```javascript
-// Plan-based frequency limits
-const PLAN_LIMITS = {
-  small: { prompts: 5, frequency: 'weekly' },
-  medium: { prompts: 25, frequency: 'weekly' },
-  large: { prompts: 50, frequency: 'daily' },
-  xl: { prompts: 500, frequency: 'daily' }
-};
-
-// NEW: Frontend task generation schedule
-const FRONTEND_TASK_SCHEDULE = {
-  daily: "0 9 * * *", // 9 AM daily
-  onCompletion: "immediate",
-  onSetup: "immediate"
-};
+### Data Flow
+```
+User Action → GraphQL Mutation → Backend Processing → Real-time Updates → UI Refresh
 ```
 
-## 📅 Timeline
-- **Week 1**: Phase 1-2 (Clean architecture, database models)
-- **Week 2**: Phase 3 (GraphQL API restructure) 
-- **Week 3**: Phase 4-5 (Job system, LLM integration)
-- **Week 4**: Phase 6 (Batcher updates, frontend instruction system)
-- **Ongoing**: Frontend instruction generation runs continuously
+### State Management
+- Apollo Client for GraphQL state
+- React hooks for local component state
+- Context for wizard step management
+- Local storage for setup progress persistence
+
+## 📱 Responsive Design
+- Mobile-first approach
+- Dashboard optimized for tablets
+- Setup wizard works on all devices
+- Charts responsive and touch-friendly
 
 ## 🧪 Testing Strategy
-- Unit tests for each LLM provider integration
-- Integration tests for job processing pipeline
-- Load testing for concurrent prompt processing
-- API endpoint testing with various data scenarios
-- **NEW**: Testing for frontend instruction generation accuracy
+- Component testing with React Testing Library
+- Integration tests for setup wizard flow
+- E2E tests for critical user journeys
+- Visual regression testing for charts
+
+## 📅 Timeline
+- **Week 1**: Phase 1-3 (Cleanup, navigation, setup wizard)
+- **Week 2**: Phase 4-5 (Core pages, components)
+- **Week 3**: Phase 6-7 (GraphQL integration, auth)
+- **Week 4**: Phase 8-9 (Billing, UX enhancements)
+
+## 🚀 Launch Readiness
+- [ ] Setup wizard fully functional
+- [ ] Dashboard displays mock/real data
+- [ ] Billing integration complete
+- [ ] Mobile responsive
+- [ ] Performance optimized
+- [ ] Error handling comprehensive 
 
 ## 📚 Documentation Updates
 - Update API documentation for new endpoints
 - Create LLM provider setup guides
 - Document job scheduling and monitoring
 - Create deployment and scaling guides 
+- Create detailed instruction guide a llm working on the frontend could follow.
