@@ -1,0 +1,14 @@
+{
+    "type": "common",
+    "version": "1",
+    "defaultBatchConfig": {
+        "pollingIntervalMinutes": 5,
+        "batchSize": 1000
+    },
+    "consolidationOptions": {
+        "useSourceMapping": true,
+        "preserveSourceStructure": true,
+        "includeProperties": true,
+        "includeMetadata": true
+    }
+} 

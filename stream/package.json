@@ -1,0 +1,21 @@
+{
+    "name": "@outrun/stream",
+    "version": "1.0.0",
+    "description": "Outrun Stream Service",
+    "main": "index.js",
+    "dependencies": {
+        "@outrun/config": "file:../config",
+        "dotenv": "^16.4.7",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.13.0",
+        "sanitize-html": "^2.15.0"
+    },
+    "scripts": {
+        "dev": "nodemon index.js",
+        "start": "node index.js"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.0"
+    }
+}

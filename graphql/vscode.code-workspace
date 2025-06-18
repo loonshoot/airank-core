@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../outrun-website"
+		},
+		{
+			"path": "../../outrun-web-sdk"
+		},
+		{
+			"path": "../../outrun-app"
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {}
+}

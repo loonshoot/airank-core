@@ -1,0 +1,197 @@
+{
+    "provider": "atlassian",
+    "version": "1",
+    "rateLimits": {
+        "search": {
+            "requestsPerInterval": 3,
+            "intervalMs": 1000
+        },
+        "default": {
+            "requestsPerInterval": 50,
+            "intervalMs": 10000
+        }
+    },
+    "defaultBatchConfig": {
+        "backfillDays": 30,
+        "pollingIntervalMinutes": 60
+    },
+    "sourceType": "confluence",
+    "recordPath": "record",
+    "objectTypeMapping": {
+        "documents": ["page", "blogpost"],
+        "relationship": ["documentSpaceRelationship", "documentUserRelationship", "documentDocumentRelationship"]
+    },
+    "defaultConfig": {
+        "primaryId": "id",
+        "fields": {}
+    },
+    "consolidationMapping": {
+        "page": {
+            "id": "id",
+            "title": "title",
+            "body": "body.view.value",
+            "url": "_links.self",
+            "author": "version.by.displayName",
+            "authorEmail": "version.by.email",
+            "createdAt": "history.createdDate",
+            "updatedAt": "version.when",
+            "spaceKey": "space.key",
+            "spaceName": "space.name",
+            "status": "status",
+            "type": "type", 
+            "comments": "comments"
+        },
+        "blogpost": {
+            "id": "id",
+            "title": "title",
+            "body": "body.view.value",
+            "url": "_links.self",
+            "author": "version.by.displayName",
+            "authorEmail": "version.by.email",
+            "createdAt": "history.createdDate",
+            "updatedAt": "version.when",
+            "spaceKey": "space.key",
+            "spaceName": "space.name",
+            "status": "status",
+            "type": "type",
+            "comments": "comments"
+        }
+    },
+    "objects": {
+        "page": {
+            "primaryId": "id",
+            "fields": {
+                "id": "id",
+                "title": "title",
+                "body": "body.view.value",
+                "url": "_links.self",
+                "author": "version.by.displayName",
+                "authorEmail": "version.by.email",
+                "createdAt": "history.createdDate",
+                "updatedAt": "version.when",
+                "spaceKey": "space.key",
+                "spaceName": "space.name",
+                "status": "status",
+                "comments": "comments",
+                "type": "type",
+                "properties": {}
+            },
+            "documentsMapping": {
+                "title": "title",
+                "body": "body.view.value",
+                "url": "_links.self",
+                "author": "version.by.displayName",
+                "authorEmail": "version.by.email",
+                "createdAt": "history.createdDate",
+                "updatedAt": "version.when",
+                "spaceKey": "space.key",
+                "spaceName": "space.name",
+                "status": "status",
+                "comments": "comments",
+                "externalIds": {
+                    "confluence": [
+                        {
+                            "id": "id",
+                            "label": "Content ID",
+                            "type": "page"
+                        }
+                    ]
+                }
+            }
+        },
+        "blogpost": {
+            "primaryId": "id",
+            "fields": {
+                "id": "id",
+                "title": "title",
+                "body": "body.view.value",
+                "url": "_links.self",
+                "author": "version.by.displayName",
+                "authorEmail": "version.by.email",
+                "createdAt": "history.createdDate",
+                "updatedAt": "version.when",
+                "spaceKey": "space.key",
+                "spaceName": "space.name",
+                "status": "status",
+                "comments": "comments",
+                "type": "type",
+                "properties": {}
+            },
+            "documentsMapping": {
+                "title": "title",
+                "body": "body.view.value",
+                "url": "_links.self",
+                "author": "version.by.displayName",
+                "authorEmail": "version.by.email",
+                "createdAt": "history.createdDate",
+                "updatedAt": "version.when",
+                "spaceKey": "space.key",
+                "spaceName": "space.name",
+                "status": "status",
+                "type": "type",
+                "comments": "comments",
+                "externalIds": {
+                    "confluence": [
+                        {
+                            "id": "id",
+                            "label": "Content ID",
+                            "type": "blogpost"
+                        }
+                    ]
+                }
+            }
+        },
+        "documentSpaceRelationship": {
+            "primaryId": "id",
+            "entityA": {
+                "type": "document",
+                "idField": "source.id"
+            },
+            "entityB": {
+                "type": "space",
+                "idField": "target.id"
+            },
+            "relationshipMapping": {
+                "relationshipType": "belongsTo",
+                "attributes": {
+                    "spaceKey": "attributes.spaceKey",
+                    "spaceType": "attributes.spaceType"
+                }
+            }
+        },
+        "documentUserRelationship": {
+            "primaryId": "id",
+            "entityA": {
+                "type": "document",
+                "idField": "source.id"
+            },
+            "entityB": {
+                "type": "user",
+                "idField": "target.id"
+            },
+            "relationshipMapping": {
+                "relationshipType": "relationshipType",
+                "attributes": {
+                    "role": "attributes.role"
+                }
+            }
+        },
+        "documentDocumentRelationship": {
+            "primaryId": "id",
+            "entityA": {
+                "type": "document",
+                "idField": "source.id"
+            },
+            "entityB": {
+                "type": "document",
+                "idField": "target.id"
+            },
+            "relationshipMapping": {
+                "relationshipType": "relationshipType",
+                "attributes": {
+                    "relationType": "attributes.relationType"
+                }
+            }
+        }
+    }
+} 

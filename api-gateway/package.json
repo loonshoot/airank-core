@@ -1,0 +1,25 @@
+{
+    "name": "@outrun/api-gateway",
+    "version": "1.0.0",
+    "description": "Outrun API Gateway",
+    "main": "index.js",
+    "type": "commonjs",
+    "dependencies": {
+        "@outrun/config": "file:../config",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "express": "^4.18.2",
+        "http-proxy": "^1.18.1",
+        "jose": "^5.1.3",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.0.3",
+        "redis": "^4.6.12"
+    },
+    "scripts": {
+        "dev": "nodemon index.js",
+        "start": "node index.js"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    }
+}

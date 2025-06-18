@@ -1,0 +1,17 @@
+{
+  "name": "@outrun/config",
+  "version": "1.0.0",
+  "description": "Shared configuration for Outrun services",
+  "main": "index.js",
+  "private": false,
+  "files": [
+    "index.js",
+    "sources/**/*",
+    "common/**/*"
+  ],
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "axios": "^1.6.7",
+    "mongoose": "^8.2.1"
+  }
+}

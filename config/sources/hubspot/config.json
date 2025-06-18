@@ -1,0 +1,299 @@
+{
+    "provider": "hubspot",
+    "version": "1",
+    "externalIdKey": "hubspot",
+    "idFields": ["hs_object_id", "Id", "id"],
+    "supportsDestination": true,
+    "destinationRateLimits": {
+        "requestsPerInterval": 10,
+        "intervalMs": 1000
+    },
+    "destinationMapping": {
+        "people": {
+            "availableFields": [
+                "emailAddress",
+                "firstName",
+                "lastName",
+                "phoneNumbers",
+                "jobTitle",
+                "company"
+            ],
+            "requiredFields": ["emailAddress"],
+            "defaultFields": ["emailAddress", "firstName", "lastName"]
+        },
+        "organizations": {
+            "availableFields": [
+                "companyName",
+                "domain",
+                "website",
+                "country",
+                "industry",
+                "description"
+            ],
+            "requiredFields": ["companyName"],
+            "defaultFields": ["companyName", "domain"]
+        }
+    },
+    "rateLimits": {
+        "search": {
+            "requestsPerInterval": 5,
+            "intervalMs": 1000
+        },
+        "default": {
+            "requestsPerInterval": 110,
+            "intervalMs": 10000
+        }
+    },
+    "defaultBatchConfig": {
+        "backfillDays": 30,
+        "pollingIntervalMinutes": 60
+    },
+    "sourceType": "hubspot",
+    "recordPath": "record",
+    "objectTypeMapping": {
+        "people": ["contacts"],
+        "organizations": ["companies"],
+        "relationship": ["ContactOrganizationRelationship", "ContactContactRelationship", "OrganizationOrganizationRelationship", "OrganizationContactRelationship"]
+    },
+    "defaultConfig": {
+        "primaryId": "id",
+        "fields": {}
+    },
+    "consolidationMapping": {
+        "contacts": {
+            "id": "id",
+            "email": "properties.email",
+            "firstName": "properties.firstname",
+            "lastName": "properties.lastname",
+            "phone": "properties.phone",
+            "workPhone": "properties.work_phone",
+            "address": "properties.address",
+            "city": "properties.city",
+            "state": "properties.state",
+            "country": "properties.country",
+            "zip": "properties.zip",
+            "jobTitle": "properties.jobtitle",
+            "company": "properties.company",
+            "linkedinUrl": "properties.linkedin_url",
+            "twitterUsername": "properties.twitter_username",
+            "createdAt": "createdAt",
+            "updatedAt": "updatedAt",
+            "associatedCompanyId": "properties.associatedcompanyid",
+            "hs_object_id": "properties.hs_object_id"
+        },
+        "companies": {
+            "id": "id",
+            "name": "properties.name",
+            "domain": "properties.domain",
+            "website": "properties.website",
+            "phone": "properties.phone",
+            "address": "properties.address",
+            "city": "properties.city",
+            "state": "properties.state", 
+            "country": "properties.country",
+            "zip": "properties.zip",
+            "industry": "properties.industry",
+            "description": "properties.description",
+            "numberOfEmployees": "properties.numberofemployees",
+            "annualRevenue": "properties.annualrevenue",
+            "createdAt": "createdAt",
+            "updatedAt": "updatedAt",
+            "hs_object_id": "properties.hs_object_id"
+        },
+        "ContactOrganizationRelationship": {
+            "id": "id",
+            "sourceId": "source.id",
+            "sourceExternalId": "source.externalId",
+            "targetId": "target.id",
+            "targetExternalId": "target.externalId",
+            "relationshipType": "people_to_organization",
+            "metadata": {
+                "sourceType": "hubspot",
+                "nativeRelationshipType": "employment"
+            },
+            "externalIds": {
+                "hubspot": "id"
+            }
+        }
+    },
+    "objects": {
+        "contacts": {
+            "primaryId": "id",
+            "fields": {},
+            "peopleMapping": {
+                "emailAddress": "properties.email",
+                "firstName": "properties.firstname",
+                "lastName": "properties.lastname",
+                "phoneNumbers": [
+                    {
+                        "type": "mobile",
+                        "number": "properties.phone"
+                    },
+                    {
+                        "type": "work",
+                        "number": "properties.work_phone"
+                    }
+                ],
+                "addresses": [
+                    {
+                        "type": "primary",
+                        "street": "properties.address",
+                        "city": "properties.city",
+                        "state": "properties.state",
+                        "country": "properties.country",
+                        "postalCode": "properties.zip"
+                    }
+                ],
+                "socialProfiles": [
+                    {
+                        "platform": "linkedin",
+                        "url": "properties.linkedin_url"
+                    },
+                    {
+                        "platform": "twitter",
+                        "handle": "properties.twitter_username"
+                    }
+                ],
+                "associations": [
+                    {
+                        "type": "company",
+                        "id": "properties.associatedcompanyid",
+                        "role": "properties.jobtitle",
+                        "source": "hubspot",
+                        "sourceType": "hubspot"
+                    }
+                ],
+                "externalIds": {
+                    "hubspot": [
+                        {
+                            "id": "id",
+                            "label": "Contact ID",
+                            "type": "contact"
+                        },
+                        {
+                            "id": "properties.hs_object_id",
+                            "label": "Object ID",
+                            "type": "object"
+                        }
+                    ]
+                }
+            }
+        },
+        "companies": {
+            "primaryId": "id",
+            "fields": {},
+            "organizationsMapping": {
+                "companyName": "properties.name",
+                "domain": "properties.domain",
+                "website": "properties.website",
+                "country": "properties.country",
+                "externalIds": {
+                    "hubspot": [
+                        {
+                            "id": "id",
+                            "label": "Company ID",
+                            "type": "company"
+                        },
+                        {
+                            "id": "properties.hs_object_id",
+                            "label": "Object ID",
+                            "type": "object"
+                        }
+                    ]
+                }
+            }
+        },
+        "ContactOrganizationRelationship": {
+            "primaryId": "id",
+            "entityA": {
+                "type": "person",
+                "idField": "source.id",
+                "externalIdField": "source.externalId"
+            },
+            "entityB": {
+                "type": "organization",
+                "idField": "target.id",
+                "externalIdField": "target.externalId"
+            },
+            "relationshipMapping": {
+                "relationshipType": "people_to_organization",
+                "metadata": {
+                    "sourceType": "hubspot",
+                    "nativeRelationshipType": "ContactOrganizationRelationship"
+                },
+                "externalIds": {
+                    "hubspot": "id"
+                }
+            }
+        },
+        "OrganizationOrganizationRelationship": {
+            "primaryId": "id",
+            "entityA": {
+                "type": "organization",
+                "idField": "source.id",
+                "externalIdField": "source.externalId"
+            },
+            "entityB": {
+                "type": "organization",
+                "idField": "target.id",
+                "externalIdField": "target.externalId"
+            },
+            "relationshipMapping": {
+                "relationshipType": "organization_to_organization",
+                "metadata": {
+                    "sourceType": "hubspot",
+                    "nativeRelationshipType": "OrganizationOrganizationRelationship"
+                },
+                "externalIds": {
+                    "hubspot": "id"
+                }
+            }
+        },
+        "OrganizationContactRelationship": {
+            "primaryId": "id",
+            "entityA": {
+                "type": "organization",
+                "idField": "source.id",
+                "externalIdField": "source.externalId"
+            },
+            "entityB": {
+                "type": "person",
+                "idField": "target.id",
+                "externalIdField": "target.externalId"
+            },
+            "relationshipMapping": {
+                "relationshipType": "organization_to_people",
+                "metadata": {
+                    "sourceType": "hubspot",
+                    "nativeRelationshipType": "OrganizationContactRelationship"
+                },
+                "externalIds": {
+                    "hubspot": "id"
+                }
+            }
+        },
+        "contactContactRelationship": {
+            "primaryId": "id",
+            "entityA": {
+                "type": "person",
+                "idField": "source.id",
+                "externalIdField": "source.externalId"
+            },
+            "entityB": {
+                "type": "person",
+                "idField": "target.id",
+                "externalIdField": "target.externalId"
+            },
+            "relationshipMapping": {
+                "relationshipType": "people_to_people",
+                "metadata": {
+                    "sourceType": "hubspot",
+                    "nativeRelationshipType": "contactContactRelationship"
+                },
+                "externalIds": {
+                    "hubspot": "id"
+                }
+            }
+        }
+    }
+} 

@@ -1,0 +1,89 @@
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+databases:
+- cluster_name: prod-database-us
+  engine: MONGODB
+  name: prod-database-us
+  production: true
+  version: "7"
+domains:
+- domain: us.getoutrun.com
+  type: PRIMARY
+envs:
+- key: MONGODB_URI
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:bOiluKfi1aEhY06SPWitKhFIQpiusGcT:HEWJexQkvLKRLPdJUHb38xyqL8pdImX2cbd+D8RKYfkLAusP4SyBsYEsCIowK72HktQjcHrz1o/IaCnfRxEBOAfN/sIEgL40F1n63a7zPkZeGIrwtC2rL5jxauknP8oXqPkQkiPy+Pg=]
+- key: NODE_ENV
+  scope: RUN_AND_BUILD_TIME
+  value: production
+features:
+- buildpack-stack=ubuntu-22
+ingress:
+  rules:
+  - component:
+      name: outrun-core-api-gateway
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /
+name: prod-core-us
+region: nyc
+services:
+- environment_slug: node-js
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: loonshoot/outrun-core
+  http_port: 3001
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  name: outrun-core-api-gateway
+  run_command: node index.js
+  source_dir: api-gateway
+- environment_slug: node-js
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: loonshoot/outrun-core
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  internal_ports:
+  - 3002
+  name: outrun-core-graphql
+  run_command: node index.js
+  source_dir: graphql
+- environment_slug: node-js
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: loonshoot/outrun-core
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  internal_ports:
+  - 3003
+  name: outrun-core-stream
+  run_command: node index.js
+  source_dir: stream
+workers:
+- environment_slug: node-js
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: loonshoot/outrun-core
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  name: outrun-core-batcher
+  run_command: npm start
+  source_dir: batcher
+- environment_slug: node-js
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: loonshoot/outrun-core
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  name: outrun-core-listener
+  run_command: npm start
+  source_dir: listener

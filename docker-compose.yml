@@ -1,0 +1,103 @@
+version: '3'
+
+x-common-config: &common-config
+  env_file:
+    - path: .env
+  build:
+    context: .
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+  api-gateway:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
+    ports:
+      - 3001:3001
+
+  graphql:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./graphql/Dockerfile
+    ports:
+      - 3002:3002
+
+  stream:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./stream/Dockerfile
+    ports:
+      - 3003:3003
+
+  batcher:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./batcher/Dockerfile
+
+  listener:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./listener/Dockerfile
+
+  mcp:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./mcp/Dockerfile
+    ports:
+      - 3004:3004
+
+  workflows:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./workflows/Dockerfile
+    ports:
+      - 3005:3005
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+    depends_on:
+      - mongo1
+
+  listener:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: ./listener/Dockerfile
+    ports:
+      - 3006:3006
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - WORKFLOW_SERVICE_URL=http://workflows:3005
+    depends_on:
+      - mongo1
+      - workflows
+
+  mongo1:
+    profiles: ["dev"]
+    image: mongo:7.0
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo1:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
+    volumes:
+      - "mongo1_data:/data/db"
+      - "mongo1_config:/data/configdb"
+
+volumes:
+  mongo1_data:
+  mongo1_config:
