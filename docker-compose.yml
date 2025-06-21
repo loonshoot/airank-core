@@ -25,28 +25,8 @@ services:
     ports:
       - 3002:3002
 
-  stream:
-    <<: *common-config
-    build:
-      context: .
-      dockerfile: ./stream/Dockerfile
-    ports:
-      - 3003:3003
-
   batcher:
     <<: *common-config
     build:
       context: .
       dockerfile: ./batcher/Dockerfile
-
-  mcp:
-    <<: *common-config
-    build:
-      context: .
-      dockerfile: ./mcp/Dockerfile
-
-  listener:
-    <<: *common-config
-    build:
-      context: .
-      dockerfile: ./listener/Dockerfile

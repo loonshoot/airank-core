@@ -10,12 +10,9 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node scripts/start-dev.js",
-    "dev:legacy": "concurrently -n ngrok,mongo,api,batcher,graphql,listener,stream,mcp -c \"white,red,cyan,green,yellow,blue,magenta,orange\" \"node scripts/ngrok-tunnel.js\" \"docker compose up -d mongo1 || true\" \"cd api-gateway && npm run dev\" \"cd batcher && npm run dev\" \"cd graphql && npm run dev\" \"cd listener && npm run dev\" \"cd stream && npm run dev\" \"cd mcp && npm run dev\"",
+    "dev:legacy": "concurrently -n api,batcher,graphql -c \"white,red,cyan,green,yellow,blue,magenta,orange\" \"node scripts/ngrok-tunnel.js\" \"docker compose up -d mongo1 || true\" \"cd api-gateway && npm run dev\" \"cd batcher && npm run dev\" \"cd graphql && npm run dev\" \"cd listener && npm run dev\" \"cd stream && npm run dev\" \"cd mcp && npm run dev\"",
     "dev:down": "docker compose down",
-    "dev:cleanup": "node scripts/cleanup.js",
-    "ngrok": "node scripts/ngrok-tunnel.js",
-    "test:webhook:salesforce": "node scripts/test-salesforce-webhook.js",
-    "setup:ngrok": "node scripts/setup-ngrok.js"
+    "dev:cleanup": "node scripts/cleanup.js"
   },
   "devDependencies": {
     "axios": "^1.6.2",
