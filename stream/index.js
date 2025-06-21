@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Connect to MongoDB
 const mongoUri = `${process.env.MONGODB_URI}`;
-const adminUri = `${mongoUri}/outrun?${process.env.MONGODB_PARAMS}`;
+const adminUri = `${mongoUri}/airank?${process.env.MONGODB_PARAMS}`;
 const adminConnection = mongoose.createConnection(adminUri, { serverSelectionTimeoutMS: 60000 });
 
 // Stream endpoint

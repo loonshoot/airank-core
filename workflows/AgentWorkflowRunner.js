@@ -150,7 +150,7 @@ class AgentWorkflowRunner {
         method: method || 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Outrun-Workflow-Runner'
+          'User-Agent': 'AI Rank-Workflow-Runner'
         },
         body: JSON.stringify(data)
       })

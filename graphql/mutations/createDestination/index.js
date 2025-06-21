@@ -46,15 +46,15 @@ async function createConnection(workspaceId) {
 // Function to create listeners for the destination
 async function createDestinationListeners(workspaceId, destinationId, destinationType, mappings, rateLimits) {
   try {
-    const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-    const outrunDb = mongoose.createConnection(outrunUri);
-    await outrunDb.asPromise();
+    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+    const airankDb = mongoose.createConnection(airankUri);
+    await airankDb.asPromise();
 
-    const listenersCollection = outrunDb.collection('listeners');
+    const listenersCollection = airankDb.collection('listeners');
     const createdListenerIds = [];
 
     // Load config to get field mappings
-    const config = require('@outrun/config');
+    const config = require('@airank/config');
     const sourceConfigs = await config.loadSourceConfigs();
     
     // Ensure we look up the correct config - destinationType may be "HubSpot" with capital H
@@ -248,7 +248,7 @@ async function createDestinationListeners(workspaceId, destinationId, destinatio
       console.log(`Created listener for ${destinationType} destination on '${collectionName}' collection for organizations objects`);
     }
 
-    await outrunDb.close();
+    await airankDb.close();
     return createdListenerIds;
   } catch (error) {
     console.error('Error creating destination listeners:', error);
@@ -259,18 +259,18 @@ async function createDestinationListeners(workspaceId, destinationId, destinatio
 // Function to schedule the initial sync job
 async function scheduleInitialSyncJob(workspaceId, destinationId, destinationType, mappings) {
   try {
-    const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-    const outrunDb = mongoose.createConnection(outrunUri);
-    await outrunDb.asPromise();
+    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+    const airankDb = mongoose.createConnection(airankUri);
+    await airankDb.asPromise();
 
     // Get the Agenda instance
     const Agenda = require('agenda');
-    const agenda = new Agenda({ db: { address: outrunUri, collection: 'jobs' } });
+    const agenda = new Agenda({ db: { address: airankUri, collection: 'jobs' } });
 
     await new Promise((resolve) => agenda.once('ready', resolve));
     
     // Load config to get field mappings
-    const config = require('@outrun/config');
+    const config = require('@airank/config');
     const sourceConfigs = await config.loadSourceConfigs();
     const sourceConfig = sourceConfigs[`${destinationType.toLowerCase()}`] || {};
     const objectTypeMapping = sourceConfig.objectTypeMapping || {};
@@ -387,7 +387,7 @@ async function scheduleInitialSyncJob(workspaceId, destinationId, destinationTyp
       console.log(`Scheduled initial organizations sync job for destination ${destinationId} using collection ${collectionName}`);
     }
     
-    await outrunDb.close();
+    await airankDb.close();
     return jobs.map(job => job.attrs._id.toString());
   } catch (error) {
     console.error('Error scheduling initial sync job:', error);

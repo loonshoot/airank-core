@@ -1,6 +1,6 @@
-# Outrun Listener Service
+# AI Rank Listener Service
 
-The Listener Service is a critical component of the Outrun platform that monitors MongoDB collections for changes and triggers jobs based on those changes. It uses MongoDB Change Streams to provide real-time processing of data modifications.
+The Listener Service is a critical component of the AI Rank platform that monitors MongoDB collections for changes and triggers jobs based on those changes. It uses MongoDB Change Streams to provide real-time processing of data modifications.
 
 ## Architecture Overview
 

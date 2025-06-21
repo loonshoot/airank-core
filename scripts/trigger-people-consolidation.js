@@ -32,7 +32,7 @@ async function triggerConsolidation() {
     // Create the agenda definition
     const Agenda = require('agenda');
     const agenda = new Agenda({
-      db: { address: process.env.MONGODB_URI || 'mongodb://localhost:27017/outrun', collection: 'jobs' }
+      db: { address: process.env.MONGODB_URI || 'mongodb://localhost:27017/airank', collection: 'jobs' }
     });
     
     // Define the job

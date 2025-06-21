@@ -3,7 +3,7 @@
 const Agenda = require('agenda');
 const fs = require('fs').promises;
 const path = require('path');
-const config = require('@outrun/config');
+const config = require('@airank/config');
 require('dotenv').config(); // Load environment variables from .env
 const mongoose = require('mongoose');
 const { ObjectId } = require('mongodb');
@@ -25,7 +25,7 @@ redisClient.on('connect', () => {
   console.log('Connected to Redis!');
 });
 
-const mongoUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
 
 // Create Agenda instance
 const agenda = new Agenda({ db: { address: mongoUri, collection: 'jobs' }, lockLimit: 5 });

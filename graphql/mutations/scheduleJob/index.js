@@ -12,7 +12,7 @@ async function scheduleJobMutation(parent, args, { user }) {
     });
     if (member) {
       return new Promise((resolve, reject) => {
-        const mongoUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+        const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
         const scheduledJobs = [];
 
         const agenda = new Agenda({ db: { address: mongoUri, collection: 'jobs' } });

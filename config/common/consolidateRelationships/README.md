@@ -1,7 +1,7 @@
 # consolidateRelationships Job
 
 ## Overview
-The `consolidateRelationships` job processes relationship records from various data sources (such as contact-to-account in Salesforce or contact-to-company in HubSpot) and transforms them into standardized relationship records in Outrun's unified data model. It handles canonicalization, entity enrichment, and maintains relationship direction consistency.
+The `consolidateRelationships` job processes relationship records from various data sources (such as contact-to-account in Salesforce or contact-to-company in HubSpot) and transforms them into standardized relationship records in AI Rank's unified data model. It handles canonicalization, entity enrichment, and maintains relationship direction consistency.
 
 ## How It Works
 1. Processes relationship records from `source_[sourceId]_consolidated` collection

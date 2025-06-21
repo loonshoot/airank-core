@@ -28,17 +28,17 @@ async function pauseWorkflow(parent, args, { user }) {
       { new: true }
     );
 
-    const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-    const outrunConnection = mongoose.createConnection(outrunUri);
-    await outrunConnection.asPromise();
+    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+    const airankConnection = mongoose.createConnection(airankUri);
+    await airankConnection.asPromise();
 
-    const TriggerListenerModel = outrunConnection.model('TriggerListener', TriggerListener.schema);
+    const TriggerListenerModel = airankConnection.model('TriggerListener', TriggerListener.schema);
     await TriggerListenerModel.updateMany(
       { workflowId, workspaceId },
       { active: false }
     );
 
-    await Promise.all([workspaceConnection.close(), outrunConnection.close()]);
+    await Promise.all([workspaceConnection.close(), airankConnection.close()]);
     return workflow;
   } catch (error) {
     console.error('Error pausing workflow:', error);

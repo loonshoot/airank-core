@@ -1,10 +1,10 @@
-# Outrun Development Scripts
+# AI Rank Development Scripts
 
-This directory contains utility scripts for the Outrun development environment.
+This directory contains utility scripts for the AI Rank development environment.
 
 ### Webhook Testing
 
-Outrun supports webhook integration for various services (Salesforce, Hubspot, etc.) through the API Gateway. 
+AI Rank supports webhook integration for various services (Salesforce, Hubspot, etc.) through the API Gateway. 
 
 #### Setup
 

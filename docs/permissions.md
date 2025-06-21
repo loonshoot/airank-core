@@ -1,6 +1,6 @@
-# Outrun GraphQL Permissions System
+# AI Rank GraphQL Permissions System
 
-This document outlines the complete permissions system used in the Outrun GraphQL API.
+This document outlines the complete permissions system used in the AI Rank GraphQL API.
 
 ## Permission Format
 

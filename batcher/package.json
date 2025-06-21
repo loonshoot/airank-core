@@ -12,7 +12,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@outrun/config": "^1.0.0",
+    "@airank/config": "^1.0.0",
     "agenda": "^5.0.0",
     "axios": "^1.8.4",
     "dotenv": "^16.4.7",

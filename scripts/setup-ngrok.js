@@ -27,7 +27,7 @@ function askQuestion(question) {
 
 async function main() {
   console.log('\n=================================================');
-  console.log('🚀 Outrun Ngrok Setup Assistant');
+  console.log('🚀 AI Rank Ngrok Setup Assistant');
   console.log('=================================================\n');
 
   console.log('This script will help you set up ngrok for webhook testing.\n');

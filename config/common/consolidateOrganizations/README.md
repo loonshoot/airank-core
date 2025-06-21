@@ -1,7 +1,7 @@
 # consolidateOrganizations Job
 
 ## Overview
-The `consolidateOrganizations` job transforms company/account records from different data sources into standardized organization records in Outrun's unified data model. It handles duplicate detection, merging of company data, and maintains source attribution at the field level.
+The `consolidateOrganizations` job transforms company/account records from different data sources into standardized organization records in AI Rank's unified data model. It handles duplicate detection, merging of company data, and maintains source attribution at the field level.
 
 ## How It Works
 1. Processes records from source-specific `source_[sourceId]_consolidated` collection

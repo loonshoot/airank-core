@@ -16,12 +16,12 @@ class EventDrivenWorkflowListener {
     }
 
     try {
-      // Connect to outrun database
-      const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-      this.outrunConnection = mongoose.createConnection(outrunUri);
-      await this.outrunConnection.asPromise();
+      // Connect to airank database
+      const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+      this.airankConnection = mongoose.createConnection(airankUri);
+      await this.airankConnection.asPromise();
       
-      console.log('Connected to outrun database');
+      console.log('Connected to airank database');
       
       // Load and start all active trigger listeners
       await this.loadTriggerListeners();
@@ -48,8 +48,8 @@ class EventDrivenWorkflowListener {
     this.listeners.clear();
 
     // Close database connection
-    if (this.outrunConnection) {
-      await this.outrunConnection.close();
+    if (this.airankConnection) {
+      await this.airankConnection.close();
     }
 
     this.isRunning = false;
@@ -57,7 +57,7 @@ class EventDrivenWorkflowListener {
   }
 
   async loadTriggerListeners() {
-    const TriggerListenerModel = this.outrunConnection.model('TriggerListener', TriggerListener.schema);
+    const TriggerListenerModel = this.airankConnection.model('TriggerListener', TriggerListener.schema);
     
     // Get all active trigger listeners
     const activeListeners = await TriggerListenerModel.find({ active: true });

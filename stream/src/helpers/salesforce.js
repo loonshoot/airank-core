@@ -163,9 +163,9 @@ async function processEvent(event) {
  */
 function extractStreamInfo(channelName, source) {
   try {
-    // Sources have a custom format in the channel name - outrun_{sourceId}_{workspaceId}
+    // Sources have a custom format in the channel name - airank_{sourceId}_{workspaceId}
     // This should be sent from Salesforce in the channel subscription name
-    if (source && source.includes('outrun_')) {
+    if (source && source.includes('airank_')) {
       const parts = source.split('_');
       if (parts.length >= 3) {
         return {

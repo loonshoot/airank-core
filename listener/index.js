@@ -4,7 +4,7 @@ const { Agenda } = require('@hokify/agenda');
 const { Listener } = require('./src/models');
 const os = require('os');
 const crypto = require('crypto');
-const config = require('@outrun/config');
+const config = require('@airank/config');
 
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -17,7 +17,7 @@ console.log(`Instance ID: ${INSTANCE_ID}`);
 // Initialize Agenda
 const agenda = new Agenda({
   db: {
-    address: `${MONGODB_URI}/outrun?${MONGODB_PARAMS}`,
+    address: `${MONGODB_URI}/airank?${MONGODB_PARAMS}`,
     collection: 'jobs'
   },
   maxConcurrency: 20,
@@ -540,7 +540,7 @@ const pollingInterval = setInterval(pollForAvailableListeners, 15000);
 async function startService() {
   try {
     // Connect to MongoDB with improved options
-    await mongoose.connect(`${MONGODB_URI}/outrun?${MONGODB_PARAMS}`, {
+    await mongoose.connect(`${MONGODB_URI}/airank?${MONGODB_PARAMS}`, {
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 30000,
@@ -555,14 +555,14 @@ async function startService() {
       console.error('MongoDB connection error:', err);
       // Attempt to reconnect
       setTimeout(() => {
-        mongoose.connect(`${MONGODB_URI}/outrun?${MONGODB_PARAMS}`).catch(console.error);
+        mongoose.connect(`${MONGODB_URI}/airank?${MONGODB_PARAMS}`).catch(console.error);
       }, 5000);
     });
 
     mongoose.connection.on('disconnected', () => {
       console.log('MongoDB disconnected. Attempting to reconnect...');
       setTimeout(() => {
-        mongoose.connect(`${MONGODB_URI}/outrun?${MONGODB_PARAMS}`).catch(console.error);
+        mongoose.connect(`${MONGODB_URI}/airank?${MONGODB_PARAMS}`).catch(console.error);
       }, 5000);
     });
 

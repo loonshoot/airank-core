@@ -1,6 +1,6 @@
-# Outrun Workflow Service
+# AI Rank Workflow Service
 
-This service handles the execution of AI workflows created in the Outrun app. It runs as a separate Docker container to isolate AI processing from the UI.
+This service handles the execution of AI workflows created in the AI Rank app. It runs as a separate Docker container to isolate AI processing from the UI.
 
 ## Features
 
@@ -68,7 +68,7 @@ docker-compose up workflows
 
 ## Integration
 
-The outrun-app communicates with this service via the `WorkflowClient` class:
+The airank-app communicates with this service via the `WorkflowClient` class:
 
 ```typescript
 import { workflowClient } from '@/lib/agents/WorkflowClient'

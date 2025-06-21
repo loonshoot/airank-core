@@ -1,7 +1,7 @@
 {
-  "name": "outrun-listener",
+  "name": "airank-listener",
   "version": "1.0.0",
-  "description": "Outrun workflow trigger listener service",
+  "description": "AI Rank workflow trigger listener service",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

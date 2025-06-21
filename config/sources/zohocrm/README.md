@@ -2,7 +2,7 @@
 
 ## Overview
 
-This configuration enables Outrun to integrate with Zoho CRM, providing bidirectional sync capabilities for people, organizations, and relationships. Zoho CRM has a unique data structure that differs significantly from other CRM systems like Salesforce and HubSpot.
+This configuration enables AI Rank to integrate with Zoho CRM, providing bidirectional sync capabilities for people, organizations, and relationships. Zoho CRM has a unique data structure that differs significantly from other CRM systems like Salesforce and HubSpot.
 
 ## Key Differences from Other CRMs
 
@@ -160,7 +160,7 @@ Zoho CRM → Stream → Consolidation → Relationship Extraction → Final Coll
 
 1. **No Real-time Relationships**: Zoho doesn't provide webhook events for relationship changes
 2. **API Rate Limits**: Related Records API calls are subject to Zoho's rate limiting (100 requests/minute)
-3. **No Bidirectional Sync**: Relationship changes in Outrun don't sync back to Zoho lookups
+3. **No Bidirectional Sync**: Relationship changes in AI Rank don't sync back to Zoho lookups
 4. **Region Dependency**: API endpoints vary by Zoho region/data center
 5. **Additional API Calls**: Account processing requires extra API calls to fetch related contacts
 

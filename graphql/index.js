@@ -1,18 +1,24 @@
-// outrun-core/graphql/index.js
+// airank-core/graphql/index.js
 
 const { ApolloServer, gql } = require('apollo-server-express');
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const { jwtDecrypt } = require("jose");
 const { promisify } = require('util');
 const crypto = require('crypto');
 const hkdf = promisify(crypto.hkdf);
 const app = express();
 const port = 3002;
 
+// Import jose dynamically
+let jwtDecrypt;
+(async () => {
+  const jose = await import('jose');
+  jwtDecrypt = jose.jwtDecrypt;
+})();
+
 // MongoDB connection
-const mongoUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
 
 mongoose.connect(mongoUri)
   .then(() => {
@@ -743,13 +749,13 @@ mongoose.connect(mongoUri)
           const bearerToken = authHeader.split(' ')[1];
           
           try {
-            // Connect to outrun database to look up API key
-            const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-            const outrunDb = mongoose.createConnection(outrunUri);
-            await outrunDb.asPromise();
+            // Connect to airank database to look up API key
+            const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+            const airankDb = mongoose.createConnection(airankUri);
+            await airankDb.asPromise();
             
-            const apiKey = await outrunDb.collection('apiKeys').findOne({ bearer: bearerToken });
-            await outrunDb.close();
+            const apiKey = await airankDb.collection('apiKeys').findOne({ bearer: bearerToken });
+            await airankDb.close();
             
             if (!apiKey) {
               console.error('API key not found in database');

@@ -74,11 +74,16 @@ const HubspotDataSchema = new mongoose.Schema({
 // Generic Schema for Consolidated Records (used by consolidatePeople, etc.)
 const ConsolidatedRecordSchema = new mongoose.Schema({}, { strict: false });
 
+// Helper function to get or create a model
+const getOrCreateModel = (modelName, schema) => {
+    return mongoose.models[modelName] || mongoose.model(modelName, schema);
+};
+
 // Export both models and schemas
 module.exports = {
-    Source: mongoose.model('Source', SourceSchema),
-    Token: mongoose.model('Token', TokenSchema),
-    JobHistory: mongoose.model('JobHistory', JobHistorySchema),
+    Source: getOrCreateModel('Source', SourceSchema),
+    Token: getOrCreateModel('Token', TokenSchema),
+    JobHistory: getOrCreateModel('JobHistory', JobHistorySchema),
     SearchAnalyticsDataSchema,
     HubspotDataSchema,
     ConsolidatedRecordSchema,

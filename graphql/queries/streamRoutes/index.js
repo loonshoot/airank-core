@@ -5,7 +5,7 @@ const { Member } = require('../member');
 
 // Define the StreamRoute Model
 const StreamRoute = (workspaceId) => {
-  const dataLakeUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+  const dataLakeUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
   const datalake = mongoose.createConnection(dataLakeUri);
 
   return datalake.model('StreamRoute', new mongoose.Schema({

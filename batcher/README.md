@@ -1,6 +1,6 @@
-# Outrun Batcher Service
+# AI Rank Batcher Service
 
-The Batcher Service is a core component of the Outrun platform that handles scheduled data ingestion from various external APIs. It uses Agenda for job scheduling and management, with built-in support for rate limiting, error handling, and job history tracking.
+The Batcher Service is a core component of the AI Rank platform that handles scheduled data ingestion from various external APIs. It uses Agenda for job scheduling and management, with built-in support for rate limiting, error handling, and job history tracking.
 
 ## Architecture Overview
 

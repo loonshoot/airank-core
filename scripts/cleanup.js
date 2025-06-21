@@ -14,7 +14,7 @@ const readline = require('readline');
 
 // Database connection configurations
 const WORKSPACE_DB = 'workspace_6824f4a47c8028d89b6ff8d6';
-const OUTRUN_DB = 'outrun';
+const OUTRUN_DB = 'airank';
 const MONGO_URI = 'mongodb://localhost:27017';
 
 // Collections to be dropped
@@ -88,15 +88,15 @@ async function cleanup() {
       }
     }
     
-    // Switch to outrun database and clear shared collections
-    console.log('\n--- Switching to outrun database to clear shared collections ---');
-    const outrunDb = client.db(OUTRUN_DB);
+    // Switch to airank database and clear shared collections
+    console.log('\n--- Switching to airank database to clear shared collections ---');
+    const airankDb = client.db(OUTRUN_DB);
     console.log(`Connected to database: ${OUTRUN_DB}`);
     
     // Clear jobs collection
-    await dropCollection(outrunDb, 'jobs');
+    await dropCollection(airankDb, 'jobs');
     // Clear listener collection
-    await dropCollection(outrunDb, 'listeners'); 
+    await dropCollection(airankDb, 'listeners'); 
     
     // Summary
     console.log('\n--- Summary ---');

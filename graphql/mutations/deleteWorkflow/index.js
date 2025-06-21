@@ -9,9 +9,9 @@ async function createWorkspaceConnection(workspaceId) {
   return connection;
 }
 
-async function createOutrunConnection() {
-  const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-  const connection = mongoose.createConnection(outrunUri);
+async function createAIRankConnection() {
+  const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+  const connection = mongoose.createConnection(airankUri);
   await connection.asPromise();
   return connection;
 }
@@ -47,14 +47,14 @@ async function deleteWorkflow(parent, args, { user }) {
       throw new Error('Workflow not found');
     }
 
-    const outrunConnection = await createOutrunConnection();
-    const TriggerListenerModel = outrunConnection.model('TriggerListener', TriggerListener.schema);
+    const airankConnection = await createAIRankConnection();
+    const TriggerListenerModel = airankConnection.model('TriggerListener', TriggerListener.schema);
 
     await TriggerListenerModel.deleteMany({ workflowId, workspaceId });
     await WorkflowRunModel.deleteMany({ workflowId, workspaceId });
     await WorkflowModel.deleteOne({ id: workflowId });
 
-    await Promise.all([workspaceConnection.close(), outrunConnection.close()]);
+    await Promise.all([workspaceConnection.close(), airankConnection.close()]);
     return true;
   } catch (error) {
     console.error('Error deleting workflow:', error);

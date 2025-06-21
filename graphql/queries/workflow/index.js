@@ -178,9 +178,9 @@ async function createWorkspaceConnection(workspaceId) {
   return connection;
 }
 
-async function createOutrunConnection() {
-  const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-  const connection = mongoose.createConnection(outrunUri);
+async function createAIRankConnection() {
+  const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+  const connection = mongoose.createConnection(airankUri);
   await connection.asPromise();
   return connection;
 }
@@ -361,7 +361,7 @@ const resolvers = {
     }
 
     try {
-      const connection = await createOutrunConnection();
+      const connection = await createAIRankConnection();
       const TriggerListenerModel = connection.model('TriggerListener', TriggerListener.schema);
 
       const listeners = await TriggerListenerModel.find({ workspaceId, active: true });

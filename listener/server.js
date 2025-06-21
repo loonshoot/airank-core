@@ -4,7 +4,7 @@ const TriggerManager = require('./TriggerManager')
 async function startListenerService() {
   try {
     // Connect to MongoDB
-    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/outrun'
+    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/airank'
     await mongoose.connect(mongoUri)
     console.log('Connected to MongoDB')
 

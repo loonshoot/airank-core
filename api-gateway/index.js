@@ -8,13 +8,21 @@ const path = require('path');
 const stream = require('stream');
 // const jwt = require('jsonwebtoken'); // Import JWT library (No longer needed)
 require('dotenv').config(); // Load environment variables from .env
-const { jwtDecrypt, jwtEncrypt } = require("jose"); // Import jose
 const { promisify } = require('util');
 const crypto = require('crypto');
 const hkdf = promisify(crypto.hkdf);
 
+// Import jose dynamically
+let jwtDecrypt, jwtEncrypt;
+(async () => {
+  const jose = await import('jose');
+  jwtDecrypt = jose.jwtDecrypt;
+  jwtEncrypt = jose.jwtEncrypt;
+})();
+
 const app = express();
 const proxy = httpProxy.createProxyServer();
+const port = process.env.API_GATEWAY_PORT || 3001; // Use environment variable or fallback to 3001
 
 const routesFilePath = path.join(__dirname, 'routes.json');
 const isProduction = process.env.NODE_ENV === 'production';
@@ -39,7 +47,7 @@ try {
 if (!isProduction && process.env.REDIS_URL) {
   try {
     // Check Redis for ngrok URL once at startup
-    redisClient.get('outrun:dev:ngrok:url').then(ngrokUrl => {
+    redisClient.get('airank:dev:ngrok:url').then(ngrokUrl => {
       if (ngrokUrl) {
         console.log(`Found ngrok URL in Redis: ${ngrokUrl}`);
         process.env.NGROK_URL = ngrokUrl;
@@ -53,7 +61,7 @@ if (!isProduction && process.env.REDIS_URL) {
 }
 
 // MongoDB connection
-const mongoUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
 mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('Connected to MongoDB');
@@ -441,10 +449,10 @@ mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
           }
         }
 
-        // If no workspace-specific DB, use outrun DB
+        // If no workspace-specific DB, use airank DB
         if (!logDb) {
           logDb = mongoose.createConnection(
-            `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`
+            `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`
           );
         }
 
@@ -624,7 +632,6 @@ mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
       }
     });
 
-    const port = process.env.PORT || 3001;
     app.listen(port, () => {
       console.log(`API Gateway listening on port ${port}`);
     });

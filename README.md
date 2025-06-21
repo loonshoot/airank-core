@@ -7,8 +7,8 @@ api gateway pattern implementation using node.js
 
 1. Clone the repository
 ```bash
-git clone https://github.com/your-org/outrun-core.git
-cd outrun-core
+git clone https://github.com/your-org/airank-core.git
+cd airank-core
 ```
 
 2. Install dependencies

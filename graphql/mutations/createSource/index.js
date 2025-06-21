@@ -52,11 +52,11 @@ function encryptToken(token) {
 // Function to create a listener for the source
 async function createSourceListener(workspaceId, sourceId, sourceType) {
     try {
-        const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-        const outrunDb = mongoose.createConnection(outrunUri);
-        await outrunDb.asPromise();
+        const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+        const airankDb = mongoose.createConnection(airankUri);
+        await airankDb.asPromise();
 
-        const listenersCollection = outrunDb.collection('listeners');
+        const listenersCollection = airankDb.collection('listeners');
         
         // Load source config to get object type mappings
         const sourceTypePath = sourceType; // Use sourceType directly - it maps 1:1 to folder names now
@@ -201,7 +201,7 @@ async function createSourceListener(workspaceId, sourceId, sourceType) {
         console.log(`Created stream, consolidate, relationship, and facts listeners for source ${sourceId}`);
 
         await Promise.all([
-            outrunDb.close(),
+            airankDb.close(),
             workspaceDb.close()
         ]);
         

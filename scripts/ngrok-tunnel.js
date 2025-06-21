@@ -23,7 +23,7 @@ if (!process.env.REDIS_URL) {
 const redisClient = redis.createClient({ url: process.env.REDIS_URL });
 
 // Key for storing the URL in Redis
-const NGROK_URL_KEY = 'outrun:dev:ngrok:url';
+const NGROK_URL_KEY = 'airank:dev:ngrok:url';
 
 async function main() {
   try {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The API Gateway serves as the entry point for all API requests in the Outrun system. It handles authentication, authorization, rate limiting, IP restrictions, and request routing to downstream services.
+The API Gateway serves as the entry point for all API requests in the AI Rank system. It handles authentication, authorization, rate limiting, IP restrictions, and request routing to downstream services.
 
 ## Architecture
 

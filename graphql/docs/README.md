@@ -2,7 +2,7 @@
 
 ## Overview
 
-The GraphQL server provides a unified API for querying and mutating data across multiple workspaces in the Outrun system. It handles authentication, workspace isolation, and data access control.
+The GraphQL server provides a unified API for querying and mutating data across multiple workspaces in the AI Rank system. It handles authentication, workspace isolation, and data access control.
 
 ## Architecture
 
@@ -26,7 +26,7 @@ API Gateway → GraphQL Server → Workspace Databases
 - **Source**: MCP servers, external integrations via API Gateway
 - **Header**: `Authorization: Bearer <api-key>`
 - **Process**:
-  1. API key is looked up in the `outrun` database
+  1. API key is looked up in the `airank` database
   2. Workspace restriction is extracted from API key
   3. Permissions are pre-validated by API Gateway
 
@@ -171,7 +171,7 @@ Each workspace database contains collections like:
 - `queries`: Saved queries
 - `events`: Activity logs
 
-### Main Database (`outrun`)
+### Main Database (`airank`)
 - `workspaces`: Workspace metadata
 - `members`: User-workspace relationships
 - `apiKeys`: API key definitions and permissions
@@ -317,7 +317,7 @@ query {
 ```graphql
 mutation {
   createApiKey(
-    workspaceSlug: "outrun-dev"
+    workspaceSlug: "airank-dev"
     name: "MCP Server Key"
     permissions: ["query:objects", "/graphql:post"]
   ) {

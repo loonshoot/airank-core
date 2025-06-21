@@ -63,7 +63,7 @@ async function handleHubspotWebhook(req, res) {
     console.log('Request body:', req.body);
     
     const mongoUri = `${process.env.MONGODB_URI}`;
-    const adminUri = `${mongoUri}/outrun?${process.env.MONGODB_PARAMS}`;
+    const adminUri = `${mongoUri}/airank?${process.env.MONGODB_PARAMS}`;
     adminConnection = mongoose.createConnection(adminUri, { serverSelectionTimeoutMS: 60000 });
     
     const WebhookModel = adminConnection.model('Webhook', new mongoose.Schema({

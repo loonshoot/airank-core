@@ -2,35 +2,35 @@
   "routes": [
     {
       "path": "/api/v1/workspace/:workspaceID/stream/:streamID",
-      "target": "http://outrun-core-stream:3003/api/v1/workspace/:workspaceID/stream/:streamID",
+      "target": "http://airank-core-stream:3003/api/v1/workspace/:workspaceID/stream/:streamID",
       "type": "rest"
     },
     {
       "path": "/api/v1/webhook/hubspot",
-      "target": "http://outrun-core-stream:3003/api/v1/webhook/hubspot",
+      "target": "http://airank-core-stream:3003/api/v1/webhook/hubspot",
       "type": "rest",
       "headerlessAuth": true
     },
     {
       "path": "/api/v1/webhook/salesforce",
-      "target": "http://outrun-core-stream:3003/api/v1/webhook/salesforce",
+      "target": "http://airank-core-stream:3003/api/v1/webhook/salesforce",
       "type": "rest",
       "headerlessAuth": true
     },
     {
       "path": "/api/v1/webhook/:service",
-      "target": "http://outrun-core-stream:3003/api/v1/webhook/:service",
+      "target": "http://airank-core-stream:3003/api/v1/webhook/:service",
       "type": "rest",
       "headerlessAuth": true
     },
     {
       "path": "/graphql",
-      "target": "http://outrun-core-graphql:3002/graphql",
+      "target": "http://airank-core-graphql:3002/graphql",
       "type": "graphql"
     },
     {
       "path": "/mcp",
-      "target": "http://outrun-core-mcp:3004/mcp",
+      "target": "http://airank-core-mcp:3004/mcp",
       "type": "rest"
     }
   ]

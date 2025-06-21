@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Starting Outrun Core services..."
+echo "Starting AI Rank Core services..."
 
 # Start MongoDB if needed
 docker-compose up -d mongo1

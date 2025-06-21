@@ -14,7 +14,7 @@ const streamRouteSchema = new mongoose.Schema({
 
 // Async function to establish the database connection
 async function createConnection(workspaceId) {
-  const mongoUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+  const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
   try {
     const datalake = mongoose.createConnection(mongoUri);
 

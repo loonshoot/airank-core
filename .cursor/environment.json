@@ -3,7 +3,7 @@
   "start": "docker compose up -d mongo1 || true",
   "terminals": [
     {
-      "name": "Outrun Core Dev",
+      "name": "AI Rank Core Dev",
       "command": "npm run dev"
     }
   ]

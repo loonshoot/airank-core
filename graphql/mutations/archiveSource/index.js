@@ -13,15 +13,15 @@ const sourceSchema = new mongoose.Schema({
 // Function to deactivate source listeners
 async function removeSourceListeners(workspaceId, sourceId) {
     try {
-        const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+        const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
         const workspaceUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
         
-        const [outrunDb, workspaceDb] = await Promise.all([
-            mongoose.createConnection(outrunUri).asPromise(),
+        const [airankDb, workspaceDb] = await Promise.all([
+            mongoose.createConnection(airankUri).asPromise(),
             mongoose.createConnection(workspaceUri).asPromise()
         ]);
 
-        const listenersCollection = outrunDb.collection('listeners');
+        const listenersCollection = airankDb.collection('listeners');
         const archivedListenersCollection = workspaceDb.collection('archivedListeners');
         
         // Find all listeners for this source
@@ -42,11 +42,11 @@ async function removeSourceListeners(workspaceId, sourceId) {
             
             console.log(`Archived and deleted ${result.deletedCount} listeners for source ${sourceId}`);
             
-            await Promise.all([outrunDb.close(), workspaceDb.close()]);
+            await Promise.all([airankDb.close(), workspaceDb.close()]);
             return result.deletedCount;
         }
 
-        await Promise.all([outrunDb.close(), workspaceDb.close()]);
+        await Promise.all([airankDb.close(), workspaceDb.close()]);
         return 0;
     } catch (err) {
         console.error('Error removing source listeners:', err);

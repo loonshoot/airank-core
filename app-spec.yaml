@@ -8,7 +8,7 @@ databases:
   production: true
   version: "7"
 domains:
-- domain: us.getoutrun.com
+- domain: us.getairank.com
   type: PRIMARY
 envs:
 - key: MONGODB_URI
@@ -23,7 +23,7 @@ features:
 ingress:
   rules:
   - component:
-      name: outrun-core-api-gateway
+      name: airank-core-api-gateway
       preserve_path_prefix: true
     match:
       path:
@@ -35,35 +35,35 @@ services:
   github:
     branch: main
     deploy_on_push: true
-    repo: loonshoot/outrun-core
+    repo: loonshoot/airank-core
   http_port: 3001
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
-  name: outrun-core-api-gateway
+  name: airank-core-api-gateway
   run_command: node index.js
   source_dir: api-gateway
 - environment_slug: node-js
   github:
     branch: main
     deploy_on_push: true
-    repo: loonshoot/outrun-core
+    repo: loonshoot/airank-core
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
   internal_ports:
   - 3002
-  name: outrun-core-graphql
+  name: airank-core-graphql
   run_command: node index.js
   source_dir: graphql
 - environment_slug: node-js
   github:
     branch: main
     deploy_on_push: true
-    repo: loonshoot/outrun-core
+    repo: loonshoot/airank-core
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
   internal_ports:
   - 3003
-  name: outrun-core-stream
+  name: airank-core-stream
   run_command: node index.js
   source_dir: stream
 workers:
@@ -71,19 +71,19 @@ workers:
   github:
     branch: main
     deploy_on_push: true
-    repo: loonshoot/outrun-core
+    repo: loonshoot/airank-core
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
-  name: outrun-core-batcher
+  name: airank-core-batcher
   run_command: npm start
   source_dir: batcher
 - environment_slug: node-js
   github:
     branch: main
     deploy_on_push: true
-    repo: loonshoot/outrun-core
+    repo: loonshoot/airank-core
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
-  name: outrun-core-listener
+  name: airank-core-listener
   run_command: npm start
   source_dir: listener

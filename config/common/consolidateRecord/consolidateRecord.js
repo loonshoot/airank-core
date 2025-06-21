@@ -457,11 +457,11 @@ module.exports = {
                     }
                 );
 
-                // Then get all listeners for this source from the outrun database
+                // Then get all listeners for this source from the airank database
                 try {
-                    const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-                    const outrunDb = await mongoose.createConnection(outrunUri).asPromise();
-                    const listenersCollection = outrunDb.collection('listeners');
+                    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+                    const airankDb = await mongoose.createConnection(airankUri).asPromise();
+                    const listenersCollection = airankDb.collection('listeners');
                     
                     // Find all listeners for this source except the current one
                     const otherListeners = await listenersCollection.find({
@@ -488,7 +488,7 @@ module.exports = {
                         console.log(`consolidateRecord - Cleared metadata for ${otherListeners.length} other listeners to trigger downstream processing`);
                     }
                     
-                    await outrunDb.close();
+                    await airankDb.close();
                 } catch (error) {
                     console.error('consolidateRecord - Error updating listeners metadata:', error);
                     // Continue processing despite error

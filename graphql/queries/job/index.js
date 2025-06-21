@@ -1,4 +1,4 @@
-// outrun-core/graphql/queries/job.js
+// airank-core/graphql/queries/job.js
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;

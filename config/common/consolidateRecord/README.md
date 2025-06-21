@@ -1,7 +1,7 @@
 # consolidateRecord Job
 
 ## Overview
-The `consolidateRecord` job is the first stage in Outrun's data pipeline. It processes raw records from source-specific stream collections and moves them to a consolidated collection, maintaining their original structure. This job acts as a staging step before specialized consolidation jobs transform the data into a standardized format.
+The `consolidateRecord` job is the first stage in AI Rank's data pipeline. It processes raw records from source-specific stream collections and moves them to a consolidated collection, maintaining their original structure. This job acts as a staging step before specialized consolidation jobs transform the data into a standardized format.
 
 ## How It Works
 1. Processes records from the source-specific `source_[sourceId]_stream` collection

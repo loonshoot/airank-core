@@ -1,6 +1,6 @@
-# Outrun MCP Server
+# AI Rank MCP Server
 
-This is the Model Context Protocol (MCP) server for Outrun, providing AI models with read-only access to workspace data through a standardized protocol.
+This is the Model Context Protocol (MCP) server for AI Rank, providing AI models with read-only access to workspace data through a standardized protocol.
 
 ## Architecture
 
@@ -67,7 +67,7 @@ npm install
 ### 2. Environment Variables
 The MCP server uses the following environment variables:
 - `PORT`: Server port (default: 3004)
-- `API_GATEWAY_URL`: URL of the API Gateway (default: http://outrun-core-api-gateway:3001)
+- `API_GATEWAY_URL`: URL of the API Gateway (default: http://airank-core-api-gateway:3001)
 
 ### 3. Start the Server
 ```bash
@@ -85,11 +85,11 @@ To use the MCP server with an AI client like Claude Desktop, add this configurat
 ```json
 {
   "mcpServers": {
-    "outrun": {
+    "airank": {
       "command": "npx",
       "args": [
         "@modelcontextprotocol/server-fetch",
-        "https://api.outrun.com/mcp"
+        "https://api.airank.com/mcp"
       ],
       "env": {
         "OUTRUN_BEARER_TOKEN": "your-bearer-token-here"
@@ -101,7 +101,7 @@ To use the MCP server with an AI client like Claude Desktop, add this configurat
 
 ## Bearer Token Creation
 
-Bearer tokens are created through the Outrun UI:
+Bearer tokens are created through the AI Rank UI:
 
 1. Navigate to `/{workspaceSlug}/destinations/add/mcp`
 2. Follow the 3-step wizard:
@@ -148,7 +148,7 @@ The server will be available at `http://localhost:3004` and included in the API 
 
 ## Integration
 
-The MCP server integrates with the existing Outrun infrastructure:
+The MCP server integrates with the existing AI Rank infrastructure:
 
 - **API Gateway**: Routes MCP requests and handles authentication
 - **GraphQL Service**: Executes the actual data queries
@@ -177,4 +177,4 @@ curl http://localhost:3004/health
 
 ## License
 
-This MCP server is part of the Outrun platform and follows the same licensing terms. 
+This MCP server is part of the AI Rank platform and follows the same licensing terms. 

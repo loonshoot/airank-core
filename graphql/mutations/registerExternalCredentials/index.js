@@ -88,7 +88,7 @@ async function registerExternalCredentials(parent, args, { user }) {
         if (args.service === 'salesforce') {
           const appUrl = process.env.APP_URI;
           if (!appUrl) {
-            console.error('APP_URI is not defined in environment variables for outrun-core.');
+            console.error('APP_URI is not defined in environment variables for airank-core.');
             throw new Error('APP_URI is not configured for salesforce redirect_uri construction.');
           }
           const salesforceCallbackPath = '/api/callback/salesforce'; // Hardcoded path

@@ -44,11 +44,11 @@ async function createConnection(workspaceId) {
 // Function to update listeners for a destination
 async function updateDestinationListeners(workspaceId, destinationId, destinationType, mappings, rateLimits, existingListenerIds) {
   try {
-    const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-    const outrunDb = mongoose.createConnection(outrunUri);
-    await outrunDb.asPromise();
+    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+    const airankDb = mongoose.createConnection(airankUri);
+    await airankDb.asPromise();
 
-    const listenersCollection = outrunDb.collection('listeners');
+    const listenersCollection = airankDb.collection('listeners');
     
     // Delete existing listeners
     if (existingListenerIds && existingListenerIds.length > 0) {
@@ -62,7 +62,7 @@ async function updateDestinationListeners(workspaceId, destinationId, destinatio
     const createdListenerIds = [];
 
     // Load config to get field mappings
-    const config = require('@outrun/config');
+    const config = require('@airank/config');
     const sourceConfigs = await config.loadSourceConfigs();
     
     // Generate the job name dynamically from the destinationType
@@ -139,7 +139,7 @@ async function updateDestinationListeners(workspaceId, destinationId, destinatio
       createdListenerIds.push(result.insertedId.toString());
     }
 
-    await outrunDb.close();
+    await airankDb.close();
     return createdListenerIds;
   } catch (error) {
     console.error('Error updating destination listeners:', error);

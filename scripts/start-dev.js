@@ -17,7 +17,6 @@ const API_PORT = process.env.API_GATEWAY_PORT || 3001;
 // Colors for console output
 const colors = {
   ngrok: '\x1b[37m',    // white
-  mongo: '\x1b[31m',    // red
   api: '\x1b[36m',      // cyan
   batcher: '\x1b[32m',  // green
   graphql: '\x1b[33m',  // yellow
@@ -101,11 +100,8 @@ function startService(name, command, args, env = {}) {
 
 async function main() {
   console.log('\n=================================================');
-  console.log('🚀 Starting Outrun Development Environment');
+  console.log('🚀 Starting AI Rank Development Environment');
   console.log('=================================================\n');
-  
-  // Start MongoDB
-  startService('mongo', 'docker', ['compose', 'up', '-d', 'mongo1']);
   
   // Set up ngrok URL if available
   let ngrokUrl = null;

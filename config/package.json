@@ -1,7 +1,7 @@
 {
-  "name": "@outrun/config",
+  "name": "@airank/config",
   "version": "1.0.0",
-  "description": "Shared configuration for Outrun services",
+  "description": "Shared configuration for AI Rank services",
   "main": "index.js",
   "private": false,
   "files": [

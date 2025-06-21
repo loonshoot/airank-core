@@ -1,7 +1,7 @@
 {
-  "name": "@outrun/mcp-server",
+  "name": "@airank/mcp-server",
   "version": "1.0.0",
-  "description": "Outrun MCP Server - Protocol translator for Model Context Protocol",
+  "description": "AI Rank MCP Server - Protocol translator for Model Context Protocol",
   "main": "index.js",
   "type": "commonjs",
   "dependencies": {

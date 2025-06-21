@@ -11,9 +11,9 @@ async function createWorkspaceConnection(workspaceId) {
   return connection;
 }
 
-async function createOutrunConnection() {
-  const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-  const connection = mongoose.createConnection(outrunUri);
+async function createAIRankConnection() {
+  const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+  const connection = mongoose.createConnection(airankUri);
   await connection.asPromise();
   return connection;
 }
@@ -21,8 +21,8 @@ async function createOutrunConnection() {
 // Function to sync trigger listeners
 async function syncTriggerListeners(workspaceId, workflowId, triggers) {
   try {
-    const outrunConnection = await createOutrunConnection();
-    const TriggerListenerModel = outrunConnection.model('TriggerListener', TriggerListener.schema);
+    const airankConnection = await createAIRankConnection();
+    const TriggerListenerModel = airankConnection.model('TriggerListener', TriggerListener.schema);
 
     // Remove existing listeners for this workflow
     await TriggerListenerModel.deleteMany({ workflowId, workspaceId });
@@ -45,7 +45,7 @@ async function syncTriggerListeners(workspaceId, workflowId, triggers) {
       console.log(`Synced ${listeners.length} trigger listeners for workflow ${workflowId}`);
     }
 
-    await outrunConnection.close();
+    await airankConnection.close();
   } catch (error) {
     console.error('Error syncing trigger listeners:', error);
     throw error;

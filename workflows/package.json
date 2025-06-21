@@ -1,7 +1,7 @@
 {
-  "name": "outrun-workflows",
+  "name": "airank-workflows",
   "version": "1.0.0",
-  "description": "Outrun workflow execution service",
+  "description": "AI Rank workflow execution service",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -12,10 +12,10 @@ async function createWorkspace(parent, args, { user }) {
   }
 
   try {
-    // Connect to the outrun database
-    const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-    const outrunDb = mongoose.createConnection(outrunUri);
-    await outrunDb.asPromise();
+    // Connect to the airank database
+    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+    const airankDb = mongoose.createConnection(airankUri);
+    await airankDb.asPromise();
 
     // Generate unique IDs using Mongoose ObjectId
     const workspaceId = new mongoose.Types.ObjectId().toString();
@@ -29,7 +29,7 @@ async function createWorkspace(parent, args, { user }) {
     let slug = slugify(name, { lower: true, strict: true });
     
     // Check if slug already exists and make it unique if needed
-    const workspaceCollection = outrunDb.collection('workspaces');
+    const workspaceCollection = airankDb.collection('workspaces');
     const existingWorkspace = await workspaceCollection.findOne({ slug });
     if (existingWorkspace) {
       // Append a random string to make the slug unique
@@ -105,7 +105,7 @@ async function createWorkspace(parent, args, { user }) {
     };
 
     // Insert member into the members collection
-    const membersCollection = outrunDb.collection('members');
+    const membersCollection = airankDb.collection('members');
     await membersCollection.insertOne(member);
 
     // Create the workspace database
@@ -129,7 +129,7 @@ async function createWorkspace(parent, args, { user }) {
 
     // Close connections
     await Promise.all([
-      outrunDb.close(),
+      airankDb.close(),
       workspaceDb.close()
     ]);
 

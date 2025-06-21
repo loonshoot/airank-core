@@ -1,4 +1,4 @@
-// outrun-core/mcp/index.js
+// airank-core/mcp/index.js
 
 const express = require('express');
 const { randomUUID } = require('node:crypto');
@@ -13,7 +13,7 @@ const app = express();
 app.use(express.json());
 
 // Configure API Gateway client
-const apiGatewayUrl = process.env.API_GATEWAY_URL || 'http://outrun-core-api-gateway:3001';
+const apiGatewayUrl = process.env.API_GATEWAY_URL || 'http://airank-core-api-gateway:3001';
 const graphqlClient = axios.create({
   baseURL: apiGatewayUrl,
   timeout: 30000
@@ -51,7 +51,7 @@ const forwardToGraphQL = async (query, variables, bearerToken) => {
 // Create MCP server factory function
 const createMcpServer = (bearerToken) => {
   const server = new McpServer({
-    name: "Outrun Data Access",
+    name: "AI Rank Data Access",
     version: "1.0.0"
   });
 

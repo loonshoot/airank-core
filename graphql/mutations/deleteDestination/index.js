@@ -48,11 +48,11 @@ async function deleteDestinationListeners(listenerIds) {
   }
   
   try {
-    const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
-    const outrunDb = mongoose.createConnection(outrunUri);
-    await outrunDb.asPromise();
+    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+    const airankDb = mongoose.createConnection(airankUri);
+    await airankDb.asPromise();
 
-    const listenersCollection = outrunDb.collection('listeners');
+    const listenersCollection = airankDb.collection('listeners');
     
     // Delete the listeners
     await listenersCollection.deleteMany({
@@ -61,7 +61,7 @@ async function deleteDestinationListeners(listenerIds) {
       }
     });
 
-    await outrunDb.close();
+    await airankDb.close();
   } catch (error) {
     console.error('Error deleting destination listeners:', error);
     throw error;

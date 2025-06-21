@@ -1,11 +1,11 @@
 {
-    "name": "@outrun/api-gateway",
+    "name": "@airank/api-gateway",
     "version": "1.0.0",
-    "description": "Outrun API Gateway",
+    "description": "AI Rank API Gateway",
     "main": "index.js",
     "type": "commonjs",
     "dependencies": {
-        "@outrun/config": "file:../config",
+        "@airank/config": "file:../config",
         "cors": "^2.8.5",
         "dotenv": "^16.4.5",
         "express": "^4.18.2",

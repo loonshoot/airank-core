@@ -17,14 +17,14 @@ async function createWorkspaceConnection(workspaceId) {
   }
 }
 
-async function createOutrunConnection() {
-  const outrunUri = `${process.env.MONGODB_URI}/outrun?${process.env.MONGODB_PARAMS}`;
+async function createAIRankConnection() {
+  const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
   try {
-    const connection = mongoose.createConnection(outrunUri);
+    const connection = mongoose.createConnection(airankUri);
     await connection.asPromise();
     return connection;
   } catch (error) {
-    console.error('Error connecting to outrun database:', error);
+    console.error('Error connecting to airank database:', error);
     throw error;
   }
 }
@@ -34,8 +34,8 @@ async function createTriggerListeners(workspaceId, workflowId, triggers) {
   if (!triggers || triggers.length === 0) return;
 
   try {
-    const outrunConnection = await createOutrunConnection();
-    const TriggerListenerModel = outrunConnection.model('TriggerListener', TriggerListener.schema);
+    const airankConnection = await createAIRankConnection();
+    const TriggerListenerModel = airankConnection.model('TriggerListener', TriggerListener.schema);
 
     const listeners = triggers
       .filter(trigger => trigger.active && trigger.type !== 'manual')
@@ -54,7 +54,7 @@ async function createTriggerListeners(workspaceId, workflowId, triggers) {
       console.log(`Created ${listeners.length} trigger listeners for workflow ${workflowId}`);
     }
 
-    await outrunConnection.close();
+    await airankConnection.close();
   } catch (error) {
     console.error('Error creating trigger listeners:', error);
     throw error;

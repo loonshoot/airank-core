@@ -2,8 +2,8 @@
  * Zoho CRM Destination Job Handler
  * 
  * This job handles two types of syncs:
- * 1. Initial sync: Sync all records from Outrun to Zoho CRM when a destination is first created
- * 2. Incremental sync: Sync individual records when they are updated in Outrun
+ * 1. Initial sync: Sync all records from AI Rank to Zoho CRM when a destination is first created
+ * 2. Incremental sync: Sync individual records when they are updated in AI Rank
  */
 
 const mongoose = require('mongoose');

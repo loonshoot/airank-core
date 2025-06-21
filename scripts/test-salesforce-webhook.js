@@ -9,7 +9,7 @@ const axios = require('axios');
 const redis = require('redis');
 
 // Key for retrieving the URL from Redis
-const NGROK_URL_KEY = 'outrun:dev:ngrok:url';
+const NGROK_URL_KEY = 'airank:dev:ngrok:url';
 
 // Sample Salesforce CDC event (Change Data Capture)
 const sampleCDCEvent = {
@@ -17,7 +17,7 @@ const sampleCDCEvent = {
     {
       replayId: Date.now().toString(),
       channelName: '/event/AccountChangeEvent',
-      source: 'outrun_' + (process.argv[2] || 'source123') + '_' + (process.argv[3] || 'workspace123'),
+      source: 'airank_' + (process.argv[2] || 'source123') + '_' + (process.argv[3] || 'workspace123'),
       data: {
         schema: '6sTsYQrfRt7Z4eEy/qX8iw',
         payload: {
@@ -96,7 +96,7 @@ async function sendWebhookTest() {
     const response = await axios.post(webhookUrl, sampleCDCEvent, {
       headers: {
         'Content-Type': 'application/json',
-        'X-Salesforce-Source': 'outrun_test'
+        'X-Salesforce-Source': 'airank_test'
       }
     });
     

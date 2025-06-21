@@ -1,8 +1,8 @@
-# Outrun Core Architecture
+# AI Rank Core Architecture
 
 ## System Overview
 
-The Outrun Core system consists of two main services that work together to provide secure, multi-tenant data access:
+The AI Rank Core system consists of two main services that work together to provide secure, multi-tenant data access:
 
 1. **API Gateway** (Port 3001) - Authentication, authorization, and request routing
 2. **GraphQL Server** (Port 3002) - Data querying and workspace isolation
@@ -47,7 +47,7 @@ The Outrun Core system consists of two main services that work together to provi
                     ┌─────────────▼─────────────┐
                     │     MongoDB Cluster      │
                     │                          │
-                    │ • outrun (main)          │
+                    │ • airank (main)          │
                     │ • workspace_xxx          │
                     │ • workspace_yyy          │
                     │ • workspace_zzz          │
@@ -102,7 +102,7 @@ The Outrun Core system consists of two main services that work together to provi
 ### Database Structure
 ```
 MongoDB Cluster
-├── outrun (main database)
+├── airank (main database)
 │   ├── workspaces (workspace metadata)
 │   ├── members (user-workspace relationships)
 │   ├── apiKeys (API key definitions)

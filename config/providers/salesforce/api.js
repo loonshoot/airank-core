@@ -441,7 +441,7 @@ async function createPubSubSubscription(token, instanceUrl, clientId, channel, c
         clientId: clientId,
         deliveryMethod: "CALLBACK",
         callbackUrl: webhookUrl,
-        description: `Outrun subscription for ${channel} (${process.env.NODE_ENV || 'development'})`
+        description: `AI Rank subscription for ${channel} (${process.env.NODE_ENV || 'development'})`
       },
       {
         headers: {
@@ -743,7 +743,7 @@ async function getWebhookBaseUrl() {
   try {
     const client = await getRedisClient();
     if (client) {
-      const ngrokUrl = await client.get('outrun:dev:ngrok:url');
+      const ngrokUrl = await client.get('airank:dev:ngrok:url');
       
       if (ngrokUrl) {
         console.log('Salesforce API: Using ngrok URL from Redis:', ngrokUrl);

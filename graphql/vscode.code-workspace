@@ -1,13 +1,13 @@
 {
 	"folders": [
 		{
-			"path": "../../outrun-website"
+			"path": "../../airank-website"
 		},
 		{
-			"path": "../../outrun-web-sdk"
+			"path": "../../airank-web-sdk"
 		},
 		{
-			"path": "../../outrun-app"
+			"path": "../../airank-app"
 		},
 		{
 			"path": ".."
