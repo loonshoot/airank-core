@@ -30,41 +30,18 @@ mongoose.connect(mongoUri)
     const { typeDefs: workspaceTypeDefs, resolvers: workspaceResolvers } = require('./queries/workspace');
     const { typeDefs: jobTypeDefs, resolvers: jobResolvers } = require('./queries/job');
     const { typeDefs: tokenTypeDefs, resolvers: tokenResolvers } = require('./queries/token');
-    const { typeDefs: integrationTypeDefs, resolvers: integrationResolvers } = require('./queries/integration'); 
-    const { typeDefs: streamRouteTypeDefs, resolvers: streamRouteSchema } = require('./queries/streamRoutes');
-    const { typeDefs: collectionsTypeDefs, resolvers: collectionsResolvers } = require('./queries/collections');
-    const { typeDefs: objectsTypeDefs, resolvers: objectsResolvers } = require('./queries/objects');
-    const { typeDefs: logsTypeDefs, resolvers: logsResolvers } = require('./queries/logs');
     const { typeDefs: configTypeDefs, resolvers: configResolvers } = require('./queries/config');
     const { typeDefs: queryTypeDefs, resolvers: queryResolvers } = require('./queries/query');
-    const { typeDefs: factsTypeDefs, resolvers: factsResolvers } = require('./queries/facts');
-    const { typeDefs: destinationsTypeDefs, resolvers: destinationsResolvers } = require('./queries/destinations');
-    const { typeDefs: apiKeyTypeDefs, resolvers: apiKeyResolvers } = require('./queries/apiKey');
-    const { typeDefs: workflowTypeDefs, resolvers: workflowResolvers } = require('./queries/workflow');
     const { scheduleJobMutation } = require('./mutations/scheduleJob');
-    const { registerExternalCredentials } = require('./mutations/registerExternalCredentials'); 
-    const { deleteExternalCredentials } = require('./mutations/deleteExternalCredentials');
     const { createSource } = require('./mutations/createSource'); 
     const { updateSource } = require('./mutations/updateSource'); 
     const { archiveSource } = require('./mutations/archiveSource'); 
-    const { createStreamRoute } = require('./mutations/createStreamRoute');
     const { updateWorkspaceConfigs } = require('./mutations/updateConfig');
     const { createQuery } = require('./mutations/createQuery');
     const { updateQuery } = require('./mutations/updateQuery');
     const { deleteQuery } = require('./mutations/deleteQuery');
     const { runQuery } = require('./mutations/runQuery');
-    const { createDestination } = require('./mutations/createDestination');
-    const { updateDestination } = require('./mutations/updateDestination');
-    const { deleteDestination } = require('./mutations/deleteDestination');
     const { createWorkspace } = require('./mutations/createWorkspace');
-    const { createApiKey } = require('./mutations/createApiKey');
-    const { updateApiKey } = require('./mutations/updateApiKey');
-    const { createWorkflow } = require('./mutations/createWorkflow');
-    const { updateWorkflow } = require('./mutations/updateWorkflow');
-    const { deleteWorkflow } = require('./mutations/deleteWorkflow');
-    const { activateWorkflow } = require('./mutations/activateWorkflow');
-    const { pauseWorkflow } = require('./mutations/pauseWorkflow');
-    const { createWorkflowRun } = require('./mutations/createWorkflowRun');
 
     // Combine typeDefs and resolvers
     const typeDefs = [
@@ -73,53 +50,16 @@ mongoose.connect(mongoUri)
         sourceTypeDefs,
         jobTypeDefs,
         tokenTypeDefs,
-        integrationTypeDefs,
-        streamRouteTypeDefs,
-        collectionsTypeDefs,
-        objectsTypeDefs,
-        logsTypeDefs,
         configTypeDefs,
         queryTypeDefs,
-        factsTypeDefs,
-        destinationsTypeDefs,
-        apiKeyTypeDefs,
-        workflowTypeDefs,
         gql`
-
           type Query {
             workspace(workspaceId: String, workspaceSlug: String): Workspace
             workspaces: [Workspace]
             members(workspaceId: String, workspaceSlug: String): [Member]
             sources(workspaceId: String, workspaceSlug: String, sourceId: String): [Source]
-            jobs(workspaceId: String, workspaceSlug: String, jobId: String, sourceId: String, destinationId: ID): [Job]
+            jobs(workspaceId: String, workspaceSlug: String, jobId: String, sourceId: String): [Job]
             tokens(workspaceId: String, workspaceSlug: String, service: String, tokenId: String): [Token]
-            integrations(workspaceId: String, workspaceSlug: String, appName: String, tokenId: String): [Integration]
-            streamRoutes(
-              workspaceId: String, 
-              workspaceSlug: String, 
-              sourceId: String, 
-              service: String, 
-              streamRouteId: String
-            ): [StreamRoute]
-            collections(workspaceId: String, workspaceSlug: String): [Collection]
-            objects(
-              workspaceId: String, 
-              workspaceSlug: String, 
-              collectionName: String!, 
-              objectId: String,
-              page: Int,
-              limit: Int
-            ): PaginatedObjects
-            logs(
-              workspaceId: String,
-              workspaceSlug: String,
-              logId: String,
-              page: Int,
-              limit: Int,
-              type: String,
-              startDate: String,
-              endDate: String
-            ): PaginatedLogs
             configs(workspaceId: String, workspaceSlug: String): [Config]
             queries(
               workspaceId: String, 
@@ -128,40 +68,6 @@ mongoose.connect(mongoUri)
               page: Int,
               limit: Int
             ): PaginatedQueries
-            destinations(
-              workspaceId: String,
-              workspaceSlug: String,
-              id: ID
-            ): [Destination]
-            facts(
-              workspaceId: String, 
-              workspaceSlug: String,
-              property: String,
-              entityId: String,
-              entityType: String,
-              factType: String,
-              startDate: DateTime,
-              endDate: DateTime,
-              period: String,
-              location: FactLocationInput,
-              dimensions: JSON,
-              limit: Int,
-              offset: Int
-            ): [Fact]
-            factsAggregate(
-              workspaceId: String,
-              workspaceSlug: String,
-              property: String!,
-              factType: String!,
-              startDate: DateTime!,
-              endDate: DateTime!,
-              groupBy: String!,
-              filters: JSON
-            ): [FactAggregate]
-            apiKeys(workspaceId: String, workspaceSlug: String): [ApiKey]
-            workflows(workspaceId: String, workspaceSlug: String, workflowId: String, page: Int, limit: Int): [Workflow]
-            workflowRuns(workspaceId: String, workspaceSlug: String, workflowId: String, runId: String, status: RunStatus, page: Int, limit: Int): PaginatedWorkflowRuns
-            triggerListeners(workspaceId: String, workspaceSlug: String): [TriggerListener]
           }
 
           type Job {
@@ -195,21 +101,6 @@ mongoose.connect(mongoUri)
             createWorkspace(
               name: String!
             ): Workspace
-            registerExternalCredentials(
-              workspaceId: String
-              workspaceSlug: String
-              service: String!
-              code: String!
-              scope: String
-              tokenId: String
-              accountsServer: String
-              redirectUri: String
-            ): ExternalCredentials
-            deleteExternalCredentials(
-              workspaceId: String
-              workspaceSlug: String
-              id: ID!
-            ): ExternalCredentials
             createSource(
               workspaceId: String
               workspaceSlug: String
@@ -239,13 +130,6 @@ mongoose.connect(mongoUri)
               workspaceSlug: String
               id: ID!
             ): SourceDeletionResponse
-            createStreamRoute(
-              workspaceId: String
-              workspaceSlug: String
-              service: String!
-              sourceId: String!
-              data: JSON!
-            ): StreamRoute
             updateWorkspaceConfigs(
               workspaceSlug: String!
               configs: JSON!
@@ -259,52 +143,6 @@ mongoose.connect(mongoUri)
               query: String
               queryId: ID
             ): QueryResult
-            createDestination(
-              workspaceId: String
-              workspaceSlug: String
-              name: String!
-              tokenId: String
-              destinationType: String!
-              targetSystem: String!
-              rateLimits: RateLimitsInput
-              mappings: DestinationMappingsInput
-            ): Destination
-            updateDestination(
-              workspaceId: String
-              workspaceSlug: String
-              id: ID!
-              name: String
-              status: String
-              mappings: DestinationMappingsInput
-            ): Destination
-            deleteDestination(
-              workspaceId: String
-              workspaceSlug: String
-              id: ID!
-            ): DestinationDeletionResponse
-            createApiKey(
-              workspaceId: String
-              workspaceSlug: String
-              name: String!
-              permissions: [String!]!
-              allowedIps: [String!]
-              allowedDomains: [String!]
-            ): ApiKey
-            updateApiKey(
-              workspaceId: String
-              workspaceSlug: String
-              id: ID!
-              name: String
-              permissions: [String!]
-              allowedIps: [String!]
-              allowedDomains: [String!]
-            ): ApiKey
-            createWorkflow(workspaceId: String, workspaceSlug: String, name: String!, description: String, nodes: JSON!, edges: JSON!, triggers: [JSON], settings: JSON, tags: [String]): Workflow
-            updateWorkflow(workspaceId: String, workspaceSlug: String, workflowId: String!, name: String, description: String, nodes: JSON, edges: JSON, triggers: [JSON], settings: JSON, tags: [String]): Workflow
-            deleteWorkflow(workspaceId: String, workspaceSlug: String, workflowId: String!): Boolean
-            activateWorkflow(workspaceId: String, workspaceSlug: String, workflowId: String!): Workflow
-            pauseWorkflow(workspaceId: String, workspaceSlug: String, workflowId: String!): Workflow
-            createWorkflowRun(workspaceId: String, workspaceSlug: String, workflowId: String!, triggeredBy: JSON, input: JSON): WorkflowRun
           }
 
           type JobScheduleResponse {
@@ -312,7 +150,7 @@ mongoose.connect(mongoUri)
             nextRunAt: String
           }
 
-          input JobScheduleInput { # New input type for job parameters
+          input JobScheduleInput {
             name: String!
             schedule: String
             data: JSON!
@@ -327,33 +165,14 @@ mongoose.connect(mongoUri)
             insertOnly: Boolean
           }
 
-          type ExternalCredentials {
-            message: String
-            authToken: String
-            remainingTokens: [Token]
-          }
-
           type SourceDeletionResponse {
             message: String
             remainingSources: [Source]
-          }
-
-          type DestinationDeletionResponse {
-            message: String
-            remainingDestinations: [Destination]
           }
             
           type Source {
             _id: String
             source: Source
-          }
-
-          type StreamRoute {
-            _id: String
-            service: String!
-            sourceId: String!
-            workspaceId: String!
-            data: JSON!
           }
 
           type QueryDeletionResponse {
@@ -366,29 +185,14 @@ mongoose.connect(mongoUri)
             count: Int!
           }
 
-          type Subscription {
-            workflowRunUpdated(workspaceId: String!, workflowId: String): WorkflowRun
-            workflowStatsUpdated(workspaceId: String!, workflowId: String!): WorkflowStats
-            workflowRunStepUpdated(workspaceId: String!, runId: String!): RunStep
-            triggerListenerActivated(workspaceId: String!): TriggerListener
-          }
-
           scalar JSON
         `
-      ];
-
-    // Function to fetch workspaceId from workspaceSlug
-    async function getWorkspaceIdFromSlug(workspaceSlug) {
-        const Workspace = mongoose.model('Workspace'); 
-        const workspace = await Workspace.findOne({ slug: workspaceSlug });
-        return workspace ? workspace._id.toString() : null;
-    }
+    ];
 
     // Resolve Query functions
     const resolvers = {
         Query: {
             workspace: async (parent, args, context) => {
-              // If no workspaceId or workspaceSlug provided, return all user workspaces
               if (!args.workspaceId && !args.workspaceSlug) {
                 const Member = mongoose.model('Member');
                 if (!context.user) {
@@ -397,10 +201,9 @@ mongoose.connect(mongoUri)
                 
                 const userId = context.user.sub || context.user._id;
                 
-                // Find all workspaces where user is a member by userId
                 const members = await Member.find({ 
                   userId: userId,
-                  permissions: "query:workspaces" // Check if permissions include 'query:workspaces'
+                  permissions: "query:workspaces"
                 });
                 
                 if (!members || members.length === 0) {
@@ -416,7 +219,6 @@ mongoose.connect(mongoUri)
                 return workspaces.length > 0 ? workspaces[0] : null;
               }
               
-              // Otherwise, get specific workspace
               const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
               if (!workspaceId) {
                   throw new Error('Workspace not found.');
@@ -431,10 +233,9 @@ mongoose.connect(mongoUri)
               
               const userId = context.user.sub || context.user._id;
               
-              // Find all workspaces where user is a member by userId
               const members = await Member.find({ 
                 userId: userId,
-                permissions: "query:workspaces" // Check if permissions include 'query:workspaces'
+                permissions: "query:workspaces"
               });
               
               if (!members || members.length === 0) {
@@ -477,47 +278,6 @@ mongoose.connect(mongoUri)
               }
               return await tokenResolvers.tokens(parent, { ...args, workspaceId }, context);
             },
-            integrations: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) {
-                  throw new Error('Workspace not found.');
-              }
-              return await integrationResolvers.integrations(parent, { ...args, workspaceId }, context);
-            },
-            streamRoutes: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) {
-                  throw new Error('Workspace not found.');
-              }
-              return await streamRouteSchema.streamRoutes(parent, { ...args, workspaceId }, context);
-            },
-            collections: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) {
-                  throw new Error('Workspace not found.');
-              }
-              return await collectionsResolvers.collections(parent, { ...args, workspaceId }, context);
-            },
-            objects: async (parent, args, context) => {
-              let workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              
-              // For API key requests, use the restricted workspace ID if no workspaceId is provided
-              if (!workspaceId && context.user && context.user.isApiKey && context.user.restrictedWorkspaceId) {
-                workspaceId = context.user.restrictedWorkspaceId;
-              }
-              
-              if (!workspaceId) {
-                  throw new Error('Workspace not found.');
-              }
-              return await objectsResolvers.objects(parent, { ...args, workspaceId }, context);
-            },
-            logs: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) {
-                  throw new Error('Workspace not found.');
-              }
-              return await logsResolvers.logs(parent, { ...args, workspaceId }, context);
-            },
             configs: async (parent, args, context) => {
               const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
               if (!workspaceId) {
@@ -531,81 +291,19 @@ mongoose.connect(mongoUri)
                     throw new Error('Workspace not found.');
                 }
                 return queryResolvers.queries(parent, { ...args, workspaceId }, context);
-            },
-            destinations: async (parent, args, context) => {
-                const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-                if (!workspaceId) {
-                    throw new Error('Workspace not found.');
-                }
-                return destinationsResolvers.destinations(parent, { ...args, workspaceId }, context);
-            },
-            facts: async (parent, args, context) => {
-                const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-                if (!workspaceId) {
-                    throw new Error('Workspace not found.');
-                }
-                return factsResolvers.Query.facts(parent, { ...args, workspaceId }, context);
-            },
-            factsAggregate: async (parent, args, context) => {
-                const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-                if (!workspaceId) {
-                    throw new Error('Workspace not found.');
-                }
-                return factsResolvers.Query.factsAggregate(parent, { ...args, workspaceId }, context);
-            },
-            apiKeys: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) {
-                  throw new Error('Workspace not found.');
-              }
-              return apiKeyResolvers.apiKeys(parent, { ...args, workspaceId }, context);
-            },
-            workflows: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) throw new Error('Workspace not found.');
-              return await workflowResolvers.workflows(parent, { ...args, workspaceId }, context);
-            },
-            workflowRuns: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) throw new Error('Workspace not found.');
-              return await workflowResolvers.workflowRuns(parent, { ...args, workspaceId }, context);
-            },
-            triggerListeners: async (parent, args, context) => {
-              const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-              if (!workspaceId) throw new Error('Workspace not found.');
-              return await workflowResolvers.triggerListeners(parent, { ...args, workspaceId }, context);
             }
         },
         Mutation: {
-          // Schedule Job mutation
-          scheduleJobs: async (parent, args, context) => { // Updated to scheduleJobs
+          scheduleJobs: async (parent, args, context) => {
             const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
             if (!workspaceId) {
                 throw new Error('Workspace not found.');
             }
             return await scheduleJobMutation(parent, { ...args, workspaceId }, context);
           },
-          // Create Workspace mutation
           createWorkspace: async (parent, args, context) => {
-            // This mutation doesn't need a workspaceId as it's creating a new workspace
             return await createWorkspace(parent, args, context);
           },
-          // Register External Credentials mutation
-          registerExternalCredentials: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-                throw new Error('Workspace not found.');
-            }
-            return await registerExternalCredentials(parent, { ...args, workspaceId }, context);
-          },
-          deleteExternalCredentials: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-              throw new Error('Workspace not found.');
-            }
-            return await deleteExternalCredentials(parent, { ...args, workspaceId }, context);
-          },
-          // Create Source mutation
           createSource: async (parent, args, context) => {
             const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
             if (!workspaceId) {
@@ -613,15 +311,6 @@ mongoose.connect(mongoUri)
             }
             return await createSource(parent, { ...args, workspaceId }, context);
           },
-          // Create Source mutation
-          createStreamRoute: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-              throw new Error('Workspace not found.');
-            }
-            return await createStreamRoute(parent, { ...args, workspaceId }, context);
-          },
-          // Update Source mutation
           updateSource: async (parent, args, context) => {
             const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
             if (!workspaceId) {
@@ -670,71 +359,6 @@ mongoose.connect(mongoUri)
                 throw new Error('Workspace not found.');
             }
             return runQuery(parent, { ...args, workspaceId }, context);
-          },
-          createDestination: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-                throw new Error('Workspace not found.');
-            }
-            return createDestination(parent, { ...args, workspaceId }, context);
-          },
-          updateDestination: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-                throw new Error('Workspace not found.');
-            }
-            return updateDestination(parent, { ...args, workspaceId }, context);
-          },
-          deleteDestination: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-                throw new Error('Workspace not found.');
-            }
-            return deleteDestination(parent, { ...args, workspaceId }, context);
-          },
-          createApiKey: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-                throw new Error('Workspace not found.');
-            }
-            return createApiKey(parent, { ...args, workspaceId }, context);
-          },
-          updateApiKey: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) {
-                throw new Error('Workspace not found.');
-            }
-            return updateApiKey(parent, { ...args, workspaceId }, context);
-          },
-          createWorkflow: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) throw new Error('Workspace not found.');
-            return await createWorkflow(parent, { ...args, workspaceId }, context);
-          },
-          updateWorkflow: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) throw new Error('Workspace not found.');
-            return await updateWorkflow(parent, { ...args, workspaceId }, context);
-          },
-          deleteWorkflow: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) throw new Error('Workspace not found.');
-            return await deleteWorkflow(parent, { ...args, workspaceId }, context);
-          },
-          activateWorkflow: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) throw new Error('Workspace not found.');
-            return await activateWorkflow(parent, { ...args, workspaceId }, context);
-          },
-          pauseWorkflow: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) throw new Error('Workspace not found.');
-            return await pauseWorkflow(parent, { ...args, workspaceId }, context);
-          },
-          createWorkflowRun: async (parent, args, context) => {
-            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
-            if (!workspaceId) throw new Error('Workspace not found.');
-            return await createWorkflowRun(parent, { ...args, workspaceId }, context);
           }
         }
     };
@@ -763,12 +387,9 @@ mongoose.connect(mongoUri)
             }
             
             req.user = { 
-              sub: 'api-key-user', // Placeholder user for API key requests
+              sub: 'api-key-user',
               isApiKey: true,
-              // Add a flag to bypass member permission checks since API key permissions
-              // are already validated by the API gateway
               bypassMemberCheck: true,
-              // Store the workspace ID that this API key is restricted to
               restrictedWorkspaceId: apiKey.workspace
             };
             next();
@@ -820,7 +441,7 @@ mongoose.connect(mongoUri)
     console.error('Error connecting to MongoDB:', err);
   });
 
-// JWT Decryption function (same as before)
+// JWT Decryption function
 async function decryptToken(token, secret) {
   const encryptionKey = await getDerivedEncryptionKey(secret, "");
   const { payload } = await jwtDecrypt(token, encryptionKey);
