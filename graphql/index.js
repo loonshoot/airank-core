@@ -20,6 +20,29 @@ let jwtDecrypt;
 // MongoDB connection
 const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
 
+// Helper function to get workspaceId from slug
+async function getWorkspaceIdFromSlug(slug) {
+  try {
+    // Connect to the airank database to look up workspace by slug
+    const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+    const airankDb = mongoose.createConnection(airankUri);
+    await airankDb.asPromise();
+    
+    const workspace = await airankDb.collection('workspaces').findOne({ slug });
+    await airankDb.close();
+    
+    if (!workspace) {
+      console.error(`Workspace with slug '${slug}' not found`);
+      return null;
+    }
+    
+    return workspace._id;
+  } catch (error) {
+    console.error('Error looking up workspace by slug:', error);
+    return null;
+  }
+}
+
 mongoose.connect(mongoUri)
   .then(() => {
     console.log('Connected to MongoDB');
@@ -32,6 +55,9 @@ mongoose.connect(mongoUri)
     const { typeDefs: tokenTypeDefs, resolvers: tokenResolvers } = require('./queries/token');
     const { typeDefs: configTypeDefs, resolvers: configResolvers } = require('./queries/config');
     const { typeDefs: queryTypeDefs, resolvers: queryResolvers } = require('./queries/query');
+    const { typeDefs: promptTypeDefs, resolvers: promptResolvers } = require('./queries/prompt');
+    const { typeDefs: brandTypeDefs, resolvers: brandResolvers } = require('./queries/brand');
+    const { typeDefs: modelTypeDefs, resolvers: modelResolvers } = require('./queries/model');
     const { scheduleJobMutation } = require('./mutations/scheduleJob');
     const { createSource } = require('./mutations/createSource'); 
     const { updateSource } = require('./mutations/updateSource'); 
@@ -42,6 +68,15 @@ mongoose.connect(mongoUri)
     const { deleteQuery } = require('./mutations/deleteQuery');
     const { runQuery } = require('./mutations/runQuery');
     const { createWorkspace } = require('./mutations/createWorkspace');
+    const { createPrompt } = require('./mutations/createPrompt');
+    const { updatePrompt } = require('./mutations/updatePrompt');
+    const { deletePrompt } = require('./mutations/deletePrompt');
+    const { createBrand } = require('./mutations/createBrand');
+    const { updateBrand } = require('./mutations/updateBrand');
+    const { deleteBrand } = require('./mutations/deleteBrand');
+    const { createModel } = require('./mutations/createModel');
+    const { updateModel } = require('./mutations/updateModel');
+    const { deleteModel } = require('./mutations/deleteModel');
 
     // Combine typeDefs and resolvers
     const typeDefs = [
@@ -52,6 +87,9 @@ mongoose.connect(mongoUri)
         tokenTypeDefs,
         configTypeDefs,
         queryTypeDefs,
+        promptTypeDefs,
+        brandTypeDefs,
+        modelTypeDefs,
         gql`
           type Query {
             workspace(workspaceId: String, workspaceSlug: String): Workspace
@@ -68,6 +106,9 @@ mongoose.connect(mongoUri)
               page: Int,
               limit: Int
             ): PaginatedQueries
+            prompts(workspaceId: String, workspaceSlug: String, promptId: String): [Prompt]
+            brands(workspaceId: String, workspaceSlug: String, brandId: String): [Brand]
+            models(workspaceId: String, workspaceSlug: String, modelId: String): [Model]
           }
 
           type Job {
@@ -143,6 +184,15 @@ mongoose.connect(mongoUri)
               query: String
               queryId: ID
             ): QueryResult
+            createPrompt(workspaceId: String, workspaceSlug: String, phrase: String!): Prompt
+            updatePrompt(workspaceId: String, workspaceSlug: String, id: ID!, phrase: String!): Prompt
+            deletePrompt(workspaceId: String, workspaceSlug: String, id: ID!): PromptDeletionResponse
+            createBrand(workspaceId: String, workspaceSlug: String, name: String!, isOwnBrand: Boolean): Brand
+            updateBrand(workspaceId: String, workspaceSlug: String, id: ID!, name: String, isOwnBrand: Boolean): Brand
+            deleteBrand(workspaceId: String, workspaceSlug: String, id: ID!): BrandDeletionResponse
+            createModel(workspaceId: String, workspaceSlug: String, name: String!, provider: String!, modelId: String!, isEnabled: Boolean): Model
+            updateModel(workspaceId: String, workspaceSlug: String, id: ID!, name: String, provider: String, modelId: String, isEnabled: Boolean): Model
+            deleteModel(workspaceId: String, workspaceSlug: String, id: ID!): ModelDeletionResponse
           }
 
           type JobScheduleResponse {
@@ -178,6 +228,21 @@ mongoose.connect(mongoUri)
           type QueryDeletionResponse {
             message: String
             remainingQueries: [StoredQuery]
+          }
+
+          type PromptDeletionResponse {
+            message: String
+            remainingPrompts: [Prompt]
+          }
+
+          type BrandDeletionResponse {
+            message: String
+            remainingBrands: [Brand]
+          }
+
+          type ModelDeletionResponse {
+            message: String
+            remainingModels: [Model]
           }
 
           type QueryResult {
@@ -291,6 +356,27 @@ mongoose.connect(mongoUri)
                     throw new Error('Workspace not found.');
                 }
                 return queryResolvers.queries(parent, { ...args, workspaceId }, context);
+            },
+            prompts: async (parent, args, context) => {
+                const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+                if (!workspaceId) {
+                    throw new Error('Workspace not found.');
+                }
+                return promptResolvers.prompts(parent, { ...args, workspaceId }, context);
+            },
+            brands: async (parent, args, context) => {
+                const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+                if (!workspaceId) {
+                    throw new Error('Workspace not found.');
+                }
+                return brandResolvers.brands(parent, { ...args, workspaceId }, context);
+            },
+            models: async (parent, args, context) => {
+                const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+                if (!workspaceId) {
+                    throw new Error('Workspace not found.');
+                }
+                return modelResolvers.models(parent, { ...args, workspaceId }, context);
             }
         },
         Mutation: {
@@ -359,6 +445,69 @@ mongoose.connect(mongoUri)
                 throw new Error('Workspace not found.');
             }
             return runQuery(parent, { ...args, workspaceId }, context);
+          },
+          createPrompt: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return createPrompt(parent, { ...args, workspaceId }, context);
+          },
+          updatePrompt: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return updatePrompt(parent, { ...args, workspaceId }, context);
+          },
+          deletePrompt: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return deletePrompt(parent, { ...args, workspaceId }, context);
+          },
+          createBrand: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return createBrand(parent, { ...args, workspaceId }, context);
+          },
+          updateBrand: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return updateBrand(parent, { ...args, workspaceId }, context);
+          },
+          deleteBrand: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return deleteBrand(parent, { ...args, workspaceId }, context);
+          },
+          createModel: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return createModel(parent, { ...args, workspaceId }, context);
+          },
+          updateModel: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return updateModel(parent, { ...args, workspaceId }, context);
+          },
+          deleteModel: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return deleteModel(parent, { ...args, workspaceId }, context);
           }
         }
     };

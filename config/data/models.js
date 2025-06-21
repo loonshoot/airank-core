@@ -74,6 +74,34 @@ const HubspotDataSchema = new mongoose.Schema({
 // Generic Schema for Consolidated Records (used by consolidatePeople, etc.)
 const ConsolidatedRecordSchema = new mongoose.Schema({}, { strict: false });
 
+// Prompt Schema
+const PromptSchema = new mongoose.Schema({
+    phrase: { type: String, required: true },
+    workspaceId: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+// Brand Schema
+const BrandSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    isOwnBrand: { type: Boolean, default: false },
+    workspaceId: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+// Model Schema
+const ModelSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    provider: { type: String, required: true }, // e.g., 'openai', 'anthropic', 'google'
+    modelId: { type: String, required: true }, // e.g., 'gpt-4', 'claude-3-sonnet'
+    isEnabled: { type: Boolean, default: true },
+    workspaceId: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
 // Helper function to get or create a model
 const getOrCreateModel = (modelName, schema) => {
     return mongoose.models[modelName] || mongoose.model(modelName, schema);
@@ -84,11 +112,17 @@ module.exports = {
     Source: getOrCreateModel('Source', SourceSchema),
     Token: getOrCreateModel('Token', TokenSchema),
     JobHistory: getOrCreateModel('JobHistory', JobHistorySchema),
+    Prompt: getOrCreateModel('Prompt', PromptSchema),
+    Brand: getOrCreateModel('Brand', BrandSchema),
+    Model: getOrCreateModel('Model', ModelSchema),
     SearchAnalyticsDataSchema,
     HubspotDataSchema,
     ConsolidatedRecordSchema,
     // Export schemas as well
     TokenSchema,
     SourceSchema,
-    JobHistorySchema
+    JobHistorySchema,
+    PromptSchema,
+    BrandSchema,
+    ModelSchema
 }; 
