@@ -102,6 +102,36 @@ const ModelSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
+// Previous Model Results Schema
+const PreviousModelResultSchema = new mongoose.Schema({
+    promptId: { type: mongoose.Schema.Types.ObjectId, ref: 'Prompt', required: true },
+    modelId: { type: String, required: true }, // Store model ID as string (e.g., 'gpt-4o', 'claude-3-sonnet')
+    prompt: { type: String, required: true }, // Store the actual prompt text for reference
+    modelName: { type: String, required: true }, // Store model name for easier querying
+    provider: { type: String, required: true }, // Store provider for rate limiting reference
+    response: { type: String, required: true }, // The model's response
+    tokensUsed: { type: Number, required: true }, // Tokens consumed for this request
+    responseTime: { type: Number, required: true }, // Response time in milliseconds
+    workspaceId: { type: String, required: true },
+    
+    // Sentiment analysis results (populated after Gemini analysis)
+    sentimentAnalysis: {
+        // New unified structure with brands array
+        brands: [{
+            brandKeywords: { type: String, required: true },
+            type: { type: String, enum: ['own', 'competitor'], required: true },
+            mentioned: { type: Boolean, default: false },
+            sentiment: { type: String, enum: ['positive', 'negative', 'not-determined'], default: 'not-determined' }
+        }],
+        overallSentiment: { type: String, enum: ['positive', 'negative', 'not-determined'], default: 'not-determined' },
+        analyzedAt: { type: Date },
+        analyzedBy: { type: String, default: 'gemini-2.5-flash' } // Track which model did the analysis
+    },
+    
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
 // Helper function to get or create a model
 const getOrCreateModel = (modelName, schema) => {
     return mongoose.models[modelName] || mongoose.model(modelName, schema);
@@ -115,6 +145,7 @@ module.exports = {
     Prompt: getOrCreateModel('Prompt', PromptSchema),
     Brand: getOrCreateModel('Brand', BrandSchema),
     Model: getOrCreateModel('Model', ModelSchema),
+    PreviousModelResult: getOrCreateModel('PreviousModelResult', PreviousModelResultSchema),
     SearchAnalyticsDataSchema,
     HubspotDataSchema,
     ConsolidatedRecordSchema,
@@ -124,5 +155,6 @@ module.exports = {
     JobHistorySchema,
     PromptSchema,
     BrandSchema,
-    ModelSchema
+    ModelSchema,
+    PreviousModelResultSchema
 }; 

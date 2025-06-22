@@ -90,59 +90,30 @@ async function discoverJobs(directory) {
 // Initialize jobs
 async function initializeJobs() {
   try {
-    // Use the config module paths
-    const sourcesPath = config.paths.sources;
-    const commonPath = config.paths.common;
+    // Only scan the dedicated jobs directory
+    const jobsPath = path.join(__dirname, '..', 'config', 'jobs');
     
-    // The config.paths structure is different than expected
-    // Instead of config.paths.config, we should directly use the config sources path
-    const configSourcesPath = sourcesPath; // This is already pointing to config/sources
-    
-    // console.log('Discovering jobs in paths:', {
-    //   sourcesPath,
-    //   commonPath,
-    //   configSourcesPath
-    // });
+    console.log('Discovering jobs in jobs directory:', jobsPath);
 
-    // Verify the paths exist
-    // try {
-    //   await fs.access(sourcesPath);
-    //   console.log(`Sources path exists: ${sourcesPath}`);
-    // } catch (err) {
-    //   console.error(`Sources path does not exist or is not accessible: ${sourcesPath}`);
-    // }
-
-    // try {
-    //   await fs.access(commonPath);
-    //   console.log(`Common path exists: ${commonPath}`);
-    // } catch (err) {
-    //   console.error(`Common path does not exist or is not accessible: ${commonPath}`);
-    // }
-    
-    // Discover jobs in both sources and common directories
-    const sourceJobs = await discoverJobs(sourcesPath);
-    // console.log(`Discovered ${Object.keys(sourceJobs).length} source jobs`);
-    
-    let commonJobs = {};
-    if (await pathExists(commonPath)) {
-      commonJobs = await discoverJobs(commonPath);
-      // console.log(`Discovered ${Object.keys(commonJobs).length} common jobs`);
+    let allJobs = {};
+    if (await pathExists(jobsPath)) {
+      allJobs = await discoverJobs(jobsPath);
+      console.log(`Discovered ${Object.keys(allJobs).length} dedicated jobs`);
     } else {
-      console.warn(`Common path does not exist: ${commonPath}`);
+      console.warn(`Jobs path does not exist: ${jobsPath}`);
     }
     
-    // Combine all discovered jobs
-    const allJobs = { ...sourceJobs, ...commonJobs };
-    // console.log(`Total jobs to register: ${Object.keys(allJobs).length}`);
+    console.log(`Total jobs to register: ${Object.keys(allJobs).length}`);
     
     // Register each discovered job with Agenda
     for (const [jobName, jobInfo] of Object.entries(allJobs)) {
       try {
         const jobModule = require(jobInfo.path);
         
-        agenda.define(jobName, { concurrency: 1, lockLifetime: 60000 }, async (job, done) => {
+        agenda.define(jobName, { concurrency: 1, lockLifetime: 600000 }, async (job, done) => {
           try {
-            job.attrs.redisClient = redisClient;
+            // Make Redis client available to job without storing in attrs
+            job.redisClient = redisClient;
             // Make agenda instance available to job
             job.agenda = agenda;
             
@@ -163,7 +134,7 @@ async function initializeJobs() {
           }
         });
         
-        // console.log(`Successfully registered job: ${jobName}`);
+        console.log(`Successfully registered job: ${jobName}`);
       } catch (error) {
         console.error(`Error loading and registering job ${jobName}:`, error);
       }

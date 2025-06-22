@@ -13,10 +13,16 @@
   "license": "MIT",
   "dependencies": {
     "@airank/config": "^1.0.0",
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@anthropic-ai/vertex-sdk": "^0.4.0",
+    "@google-cloud/vertexai": "^1.4.0",
     "agenda": "^5.0.0",
     "axios": "^1.8.4",
     "dotenv": "^16.4.7",
+    "google-auth-library": "^9.11.0",
+    "limiter": "^2.1.0",
     "mongoose": "^8.13.0",
+    "openai": "^4.57.0",
     "redis": "^4.6.13",
     "rolling-rate-limiter": "^0.4.2"
   },

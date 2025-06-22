@@ -1,0 +1,27 @@
+{
+    "name": "promptModelTester",
+    "description": "Runs all prompts against all enabled models, stores results, and performs sentiment analysis",
+    "concurrency": 1,
+    "lockLifetime": 1800000,
+    "priority": "high",
+    "retries": 2,
+    "requiredEnvVars": [
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY", 
+        "GOOGLE_CLOUD_PROJECT",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "REDIS_URL"
+    ],
+    "defaultParams": {
+        "workspaceId": null
+    },
+    "estimatedDuration": "15-30 minutes depending on number of prompts and models",
+    "rateLimit": {
+        "note": "This job implements Redis-based rate limiting per provider to respect API limits",
+        "providers": {
+            "openai": "Varies by model, 500-3500 RPM",
+            "anthropic": "50 RPM for all models",
+            "google": "300-1000 RPM depending on model"
+        }
+    }
+} 
