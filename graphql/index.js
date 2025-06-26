@@ -58,6 +58,7 @@ mongoose.connect(mongoUri)
     const { typeDefs: promptTypeDefs, resolvers: promptResolvers } = require('./queries/prompt');
     const { typeDefs: brandTypeDefs, resolvers: brandResolvers } = require('./queries/brand');
     const { typeDefs: modelTypeDefs, resolvers: modelResolvers } = require('./queries/model');
+    const { typeDefs: analyticsTypeDefs, resolvers: analyticsResolvers } = require('./queries/analytics');
     const { scheduleJobMutation } = require('./mutations/scheduleJob');
     const { createSource } = require('./mutations/createSource'); 
     const { updateSource } = require('./mutations/updateSource'); 
@@ -90,6 +91,7 @@ mongoose.connect(mongoUri)
         promptTypeDefs,
         brandTypeDefs,
         modelTypeDefs,
+        analyticsTypeDefs,
         gql`
           type Query {
             workspace(workspaceId: String, workspaceSlug: String): Workspace
@@ -109,6 +111,7 @@ mongoose.connect(mongoUri)
             prompts(workspaceId: String, workspaceSlug: String, promptId: String): [Prompt]
             brands(workspaceId: String, workspaceSlug: String, brandId: String): [Brand]
             models(workspaceId: String, workspaceSlug: String, modelId: String): [Model]
+            analytics(workspaceId: String!, startDate: String, endDate: String): AnalyticsData
           }
 
           type Job {
@@ -377,6 +380,13 @@ mongoose.connect(mongoUri)
                     throw new Error('Workspace not found.');
                 }
                 return modelResolvers.models(parent, { ...args, workspaceId }, context);
+            },
+            analytics: async (parent, args, context) => {
+                const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+                if (!workspaceId) {
+                    throw new Error('Workspace not found.');
+                }
+                return analyticsResolvers.analytics(parent, { ...args, workspaceId }, context);
             }
         },
         Mutation: {
