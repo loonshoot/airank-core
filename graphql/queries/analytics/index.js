@@ -80,11 +80,26 @@ const typeDefs = gql`
     end: String!
   }
 
+  type MentionsByModel {
+    modelName: String!
+    mentionCount: Int!
+    percentage: Float!
+  }
+
+  type PromptPerformance {
+    prompt: String!
+    winCount: Int!
+    percentage: Float!
+  }
+
   type AnalyticsData {
     summary: AnalyticsSummary!
     dailyMentions: [DailyMentions!]!
     brandSentiments: [BrandSentiment!]!
     shareOfVoice: [ShareOfVoice!]!
+    mentionsByModel: [MentionsByModel!]!
+    ownBrandPromptPerformance: [PromptPerformance!]!
+    competitorPromptPerformance: [PromptPerformance!]!
   }
 `;
 
@@ -148,7 +163,10 @@ const resolvers = {
           },
           dailyMentions: [],
           brandSentiments: [],
-          shareOfVoice: []
+          shareOfVoice: [],
+          mentionsByModel: [],
+          ownBrandPromptPerformance: [],
+          competitorPromptPerformance: []
         };
       }
 
@@ -159,9 +177,16 @@ const resolvers = {
       let ownBrandMentions = 0;
       let totalResults = results.length;
 
+      const mentionsByModelMap = new Map();
+      const ownBrandPromptPerformanceMap = new Map();
+      const competitorPromptPerformanceMap = new Map();
+
       results.forEach(result => {
         const date = formatDate(new Date(result.createdAt));
         
+        // Track mentions by model
+        mentionsByModelMap.set(result.modelName, (mentionsByModelMap.get(result.modelName) || 0) + 1);
+
         // Initialize daily mentions for this date
         if (!dailyMentionsMap.has(date)) {
           dailyMentionsMap.set(date, new Map());
@@ -171,6 +196,13 @@ const resolvers = {
           if (brand.mentioned) {
             const brandKey = `${brand.brandKeywords}-${brand.type}`;
             
+            // Track prompt performance
+            if (brand.type === 'own') {
+              ownBrandPromptPerformanceMap.set(result.prompt, (ownBrandPromptPerformanceMap.get(result.prompt) || 0) + 1);
+            } else {
+              competitorPromptPerformanceMap.set(result.prompt, (competitorPromptPerformanceMap.get(result.prompt) || 0) + 1);
+            }
+
             // Track daily mentions
             const dayBrands = dailyMentionsMap.get(date);
             dayBrands.set(brandKey, (dayBrands.get(brandKey) || 0) + 1);
@@ -238,6 +270,29 @@ const resolvers = {
         };
       });
 
+      // Convert mentions by model to array format
+      const totalModelMentions = Array.from(mentionsByModelMap.values()).reduce((sum, count) => sum + count, 0);
+      const mentionsByModel = Array.from(mentionsByModelMap.entries()).map(([modelName, count]) => ({
+        modelName,
+        mentionCount: count,
+        percentage: totalModelMentions > 0 ? (count / totalModelMentions) * 100 : 0
+      })).sort((a, b) => b.mentionCount - a.mentionCount);
+      
+      // Convert prompt performance to array format
+      const totalOwnBrandWins = Array.from(ownBrandPromptPerformanceMap.values()).reduce((sum, count) => sum + count, 0);
+      const ownBrandPromptPerformance = Array.from(ownBrandPromptPerformanceMap.entries()).map(([prompt, count]) => ({
+        prompt,
+        winCount: count,
+        percentage: totalOwnBrandWins > 0 ? (count / totalOwnBrandWins) * 100 : 0
+      })).sort((a, b) => b.winCount - a.winCount).slice(0, 5);
+
+      const totalCompetitorWins = Array.from(competitorPromptPerformanceMap.values()).reduce((sum, count) => sum + count, 0);
+      const competitorPromptPerformance = Array.from(competitorPromptPerformanceMap.entries()).map(([prompt, count]) => ({
+        prompt,
+        winCount: count,
+        percentage: totalCompetitorWins > 0 ? (count / totalCompetitorWins) * 100 : 0
+      })).sort((a, b) => b.winCount - a.winCount).slice(0, 5);
+
       return {
         summary: {
           totalResults,
@@ -248,9 +303,12 @@ const resolvers = {
           },
           ownBrandMentionPercentage: totalResults > 0 ? (ownBrandMentions / totalResults) * 100 : 0
         },
-        dailyMentions: dailyMentions.sort((a, b) => new Date(a.date) - new Date(b.date)),
+        dailyMentions,
         brandSentiments,
-        shareOfVoice: shareOfVoice.sort((a, b) => b.mentionCount - a.mentionCount)
+        shareOfVoice,
+        mentionsByModel,
+        ownBrandPromptPerformance,
+        competitorPromptPerformance
       };
 
     } catch (error) {
