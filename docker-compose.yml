@@ -9,6 +9,7 @@ x-common-config: &common-config
 services:
   api-gateway:
     <<: *common-config
+    container_name: airank-core-api-gateway
     build:
       context: .
       dockerfile: ./api-gateway/Dockerfile
@@ -16,17 +17,31 @@ services:
       - 4001:4001
     environment:
       - API_GATEWAY_PORT=4001
+    networks:
+      default:
+        aliases:
+          - api-gateway
 
   graphql:
     <<: *common-config
+    container_name: airank-core-graphql
     build:
       context: .
       dockerfile: ./graphql/Dockerfile
     ports:
       - 4002:4002
+    networks:
+      default:
+        aliases:
+          - graphql
 
   batcher:
     <<: *common-config
+    container_name: airank-core-batcher
     build:
       context: .
       dockerfile: ./batcher/Dockerfile
+    networks:
+      default:
+        aliases:
+          - batcher

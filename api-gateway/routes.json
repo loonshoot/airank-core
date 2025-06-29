@@ -2,7 +2,7 @@
   "routes": [
     {
       "path": "/graphql",
-      "target": "http://graphql:4002/graphql",
+      "target": "http://airank-core-graphql:4002/graphql",
       "type": "graphql"
     }
   ]
