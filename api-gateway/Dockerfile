@@ -19,5 +19,5 @@ RUN npm install /app/config/*.tgz
 
 COPY api-gateway/ .
 
-EXPOSE 3001
+EXPOSE 4001
 CMD ["node", "index.js"]

@@ -242,7 +242,7 @@ const member = await Member.findOne({
 - `MONGODB_URI`: Base MongoDB connection string
 - `MONGODB_PARAMS`: Connection parameters
 - `JWT_SECRET`: JWT decryption secret
-- `PORT`: Server port (default: 3002)
+- `PORT`: Server port (default: 4002)
 
 ### GraphQL Schema
 - Type definitions in individual resolver files

@@ -25,7 +25,7 @@
     },
     {
       "path": "/graphql",
-      "target": "http://airank-core-graphql:3002/graphql",
+      "target": "http://airank-core-graphql:4002/graphql",
       "type": "graphql"
     },
     {

@@ -13,9 +13,9 @@ services:
       context: .
       dockerfile: ./api-gateway/Dockerfile
     ports:
-      - 3001:3001
+      - 4001:4001
     environment:
-      - API_GATEWAY_PORT=3001
+      - API_GATEWAY_PORT=4001
 
   graphql:
     <<: *common-config
@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: ./graphql/Dockerfile
     ports:
-      - 3002:3002
+      - 4002:4002
 
   batcher:
     <<: *common-config

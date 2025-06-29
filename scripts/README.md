@@ -63,7 +63,7 @@ The system will function normally except for receiving external webhooks.
 ## Configuration
 
 * Webhook routes are defined in `api-gateway/routes.json`
-* The ngrok tunnel connects to port 3001 by default (API Gateway)
+* The ngrok tunnel connects to port 4001 by default (API Gateway)
 * Webhook URLs are in the format: `https://<ngrok-url>/api/v1/webhook/<service>`
 * Available services: `salesforce`, `hubspot`, etc.
 

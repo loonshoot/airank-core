@@ -8,7 +8,7 @@ const { promisify } = require('util');
 const crypto = require('crypto');
 const hkdf = promisify(crypto.hkdf);
 const app = express();
-const port = 3002;
+const port = 4002;
 
 // Import jose dynamically
 let jwtDecrypt;

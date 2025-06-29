@@ -19,5 +19,5 @@ RUN npm install /app/config/*.tgz
 
 COPY graphql/ .
 
-EXPOSE 3002
+EXPOSE 4002
 CMD ["node", "index.js"] 

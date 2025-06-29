@@ -86,13 +86,13 @@ async function main() {
 
   // Get API Gateway port
   const apiPort = env.API_GATEWAY_PORT || await askQuestion(
-    'Enter API Gateway port (default: 3001): '
-  ) || '3001';
+    'Enter API Gateway port (default: 4001): '
+  ) || '4001';
 
   // Get App URL
   const appUrl = env.APP_URL || await askQuestion(
-    'Enter App URL (default: http://localhost:3001): '
-  ) || 'http://localhost:3001';
+    'Enter App URL (default: http://localhost:4001): '
+  ) || 'http://localhost:4001';
 
   // Create .env content
   const envContent = [
@@ -126,8 +126,8 @@ async function main() {
       'REDIS_URL=redis://localhost:6379',
       '',
       '# API Gateway configuration',
-      'API_GATEWAY_PORT=3001',
-      'APP_URL=http://localhost:3001',
+      'API_GATEWAY_PORT=4001',
+      'APP_URL=http://localhost:4001',
       '',
       '# MongoDB configuration',
       'MONGODB_URI=mongodb://localhost:27017',

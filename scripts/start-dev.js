@@ -12,7 +12,7 @@ const ngrok = require('ngrok');
 const path = require('path');
 
 // API Gateway port
-const API_PORT = process.env.API_GATEWAY_PORT || 3001;
+const API_PORT = process.env.API_GATEWAY_PORT || 4001;
 
 // Colors for console output
 const colors = {

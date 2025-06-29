@@ -10,7 +10,7 @@ const ngrok = require('ngrok');
 const redis = require('redis');
 
 // API Gateway port - should match what's in api-gateway
-const API_PORT = process.env.API_GATEWAY_PORT || 3001;
+const API_PORT = process.env.API_GATEWAY_PORT || 4001;
 
 // Redis setup - exit if not available
 if (!process.env.REDIS_URL) {
@@ -42,7 +42,7 @@ async function main() {
       console.error('=======================================================');
       
       // Store a fallback URL in Redis
-      const fallbackUrl = process.env.APP_URL || 'http://localhost:3001';
+      const fallbackUrl = process.env.APP_URL || 'http://localhost:4001';
       await redisClient.set(NGROK_URL_KEY, fallbackUrl, { EX: 8 * 60 * 60 });
       console.log(`Using fallback URL: ${fallbackUrl}`);
       

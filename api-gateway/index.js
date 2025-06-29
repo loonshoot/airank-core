@@ -22,7 +22,7 @@ let jwtDecrypt, jwtEncrypt;
 
 const app = express();
 const proxy = httpProxy.createProxyServer();
-const port = process.env.API_GATEWAY_PORT || 3001; // Use environment variable or fallback to 3001
+const port = process.env.API_GATEWAY_PORT || 4001; // Use environment variable or fallback to 4001
 
 const routesFilePath = path.join(__dirname, 'routes.json');
 const isProduction = process.env.NODE_ENV === 'production';
