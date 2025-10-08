@@ -61,10 +61,13 @@ const resolvers = {
       throw new Error('Authentication required');
     }
 
-    // Check user is manager of billing profile
-    const billingMember = await BillingProfileMember().findOne({
+    const userId = user.sub || user._id;
+    const db = mongoose.connection.db;
+
+    // Check user is manager of billing profile using direct collection access
+    const billingMember = await db.collection('billingprofilemembers').findOne({
       billingProfileId,
-      userId: user.sub || user._id,
+      userId,
       role: 'manager'
     });
 
@@ -72,8 +75,8 @@ const resolvers = {
       throw new Error('Only billing profile managers can manage payment methods');
     }
 
-    // Get billing profile
-    const billingProfile = await BillingProfile().findById(billingProfileId);
+    // Get billing profile using direct collection access
+    const billingProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
     if (!billingProfile) {
       throw new Error('Billing profile not found');
     }
@@ -98,17 +101,24 @@ const resolvers = {
     });
 
     // Update billing profile with payment method details
-    billingProfile.defaultPaymentMethodId = paymentMethodId;
-    billingProfile.hasPaymentMethod = true;
-    billingProfile.paymentMethodLast4 = paymentMethod.card.last4;
-    billingProfile.paymentMethodBrand = paymentMethod.card.brand;
-    billingProfile.paymentMethodExpMonth = paymentMethod.card.exp_month;
-    billingProfile.paymentMethodExpYear = paymentMethod.card.exp_year;
-    billingProfile.updatedAt = new Date();
+    await db.collection('billingprofiles').updateOne(
+      { _id: billingProfileId },
+      {
+        $set: {
+          defaultPaymentMethodId: paymentMethodId,
+          hasPaymentMethod: true,
+          paymentMethodLast4: paymentMethod.card.last4,
+          paymentMethodBrand: paymentMethod.card.brand,
+          paymentMethodExpMonth: paymentMethod.card.exp_month,
+          paymentMethodExpYear: paymentMethod.card.exp_year,
+          updatedAt: new Date()
+        }
+      }
+    );
 
-    await billingProfile.save();
-
-    return billingProfile;
+    // Return updated billing profile
+    const updatedProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
+    return updatedProfile;
   }
 };
 

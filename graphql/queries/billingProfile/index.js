@@ -102,28 +102,40 @@ const resolvers = {
   billingProfiles: async (_, { billingProfileId }, { user }) => {
     if (!user) throw new Error('User not authenticated');
 
-    // Find memberships for this user
-    const memberDocs = await BillingProfileMember().find({
-      userId: user.sub || user._id
-    });
-    const profileIds = memberDocs.map(m => m.billingProfileId);
-    if (profileIds.length === 0) return [];
+    const userId = user.sub || user._id;
+    console.log('Looking up billing profiles for userId:', userId);
 
+    // Use the default mongoose connection to access the airank database
+    const db = mongoose.connection.db;
+
+    // Find memberships for this user using direct collection access
+    const memberDocs = await db.collection('billingprofilemembers').find({
+      userId
+    }).toArray();
+    console.log('Found billing profile memberships:', memberDocs.length);
+
+    const profileIds = memberDocs.map(m => m.billingProfileId);
+    if (profileIds.length === 0) {
+      console.log('No billing profile memberships found for user:', userId);
+      return [];
+    }
+
+    // Find billing profiles using direct collection access
     const filter = billingProfileId
       ? { _id: billingProfileId }
       : { _id: { $in: profileIds } };
-    const profiles = await BillingProfile().find(filter);
+    const profiles = await db.collection('billingprofiles').find(filter).toArray();
 
     return profiles.map((p) => {
       const plainProfile = {
-        ...p.toObject(),
+        ...p,
         _id: p._id.toString()
       };
 
       const membersForProfile = memberDocs
         .filter((m) => m.billingProfileId === plainProfile._id)
         .map((m) => ({
-          ...m.toObject ? m.toObject() : m,
+          ...m,
           _id: m._id.toString(),
         }));
 
@@ -137,17 +149,20 @@ const resolvers = {
   billingProfile: async (_, { billingProfileId }, { user }) => {
     if (!user) throw new Error('User not authenticated');
 
-    // Check user has access
-    const member = await BillingProfileMember().findOne({
+    const userId = user.sub || user._id;
+    const db = mongoose.connection.db;
+
+    // Check user has access using direct collection access
+    const member = await db.collection('billingprofilemembers').findOne({
       billingProfileId,
-      userId: user.sub || user._id
+      userId
     });
 
     if (!member) {
       throw new Error('Unauthorized');
     }
 
-    const profile = await BillingProfile().findById(billingProfileId);
+    const profile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
     return profile;
   }
 };

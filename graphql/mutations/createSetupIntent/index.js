@@ -47,10 +47,13 @@ const resolvers = {
       throw new Error('Authentication required');
     }
 
-    // Check user is manager of billing profile
-    const billingMember = await BillingProfileMember().findOne({
+    const userId = user.sub || user._id;
+    const db = mongoose.connection.db;
+
+    // Check user is manager of billing profile using direct collection access
+    const billingMember = await db.collection('billingprofilemembers').findOne({
       billingProfileId,
-      userId: user.sub || user._id,
+      userId,
       role: 'manager'
     });
 
@@ -58,8 +61,8 @@ const resolvers = {
       throw new Error('Only billing profile managers can manage payment methods');
     }
 
-    // Get billing profile
-    const billingProfile = await BillingProfile().findById(billingProfileId);
+    // Get billing profile using direct collection access
+    const billingProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
     if (!billingProfile) {
       throw new Error('Billing profile not found');
     }
@@ -75,9 +78,17 @@ const resolvers = {
         }
       });
       customerId = customer.id;
-      billingProfile.stripeCustomerId = customerId;
-      billingProfile.updatedAt = new Date();
-      await billingProfile.save();
+
+      // Update billing profile with Stripe customer ID
+      await db.collection('billingprofiles').updateOne(
+        { _id: billingProfileId },
+        {
+          $set: {
+            stripeCustomerId: customerId,
+            updatedAt: new Date()
+          }
+        }
+      );
     }
 
     // Create setup intent for adding payment method

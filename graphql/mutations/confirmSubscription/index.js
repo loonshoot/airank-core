@@ -47,10 +47,13 @@ const resolvers = {
       throw new Error('Authentication required');
     }
 
-    // Check user is manager of billing profile
-    const billingMember = await BillingProfileMember().findOne({
+    const userId = user.sub || user._id;
+    const db = mongoose.connection.db;
+
+    // Check user is manager of billing profile using direct collection access
+    const billingMember = await db.collection('billingprofilemembers').findOne({
       billingProfileId,
-      userId: user.sub || user._id,
+      userId,
       role: 'manager'
     });
 
@@ -58,8 +61,8 @@ const resolvers = {
       throw new Error('Only billing profile managers can confirm subscriptions');
     }
 
-    // Get billing profile
-    const billingProfile = await BillingProfile().findById(billingProfileId);
+    // Get billing profile using direct collection access
+    const billingProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
     if (!billingProfile) {
       throw new Error('Billing profile not found');
     }
@@ -72,14 +75,21 @@ const resolvers = {
     const subscription = await stripe.subscriptions.retrieve(billingProfile.stripeSubscriptionId);
 
     // Update billing profile with subscription details
-    billingProfile.planStatus = subscription.status;
-    billingProfile.currentPeriodStart = new Date(subscription.current_period_start * 1000);
-    billingProfile.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
-    billingProfile.updatedAt = new Date();
+    await db.collection('billingprofiles').updateOne(
+      { _id: billingProfileId },
+      {
+        $set: {
+          planStatus: subscription.status,
+          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          updatedAt: new Date()
+        }
+      }
+    );
 
-    await billingProfile.save();
-
-    return billingProfile;
+    // Return updated billing profile
+    const updatedProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
+    return updatedProfile;
   }
 };
 
