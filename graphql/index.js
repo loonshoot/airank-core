@@ -273,7 +273,18 @@ mongoose.connect(mongoUri)
             count: Int!
           }
 
+          type SubscriptionResult {
+            billingProfile: BillingProfile!
+            stripeSubscriptionId: String!
+            clientSecret: String
+          }
+
+          type SetupIntentResult {
+            clientSecret: String!
+          }
+
           scalar JSON
+          scalar DateTime
         `
     ];
 
