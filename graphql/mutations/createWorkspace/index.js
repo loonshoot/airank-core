@@ -121,6 +121,48 @@ async function createWorkspace(parent, args, { user }) {
     const membersCollection = airankDb.collection('members');
     await membersCollection.insertOne(member);
 
+    // Auto-create billing profile for the workspace
+    const billingProfileId = new mongoose.Types.ObjectId().toString();
+    const billingProfile = {
+      _id: billingProfileId,
+      name: `${name} Billing`,
+      currentPlan: 'free',
+      brandsLimit: 1,
+      brandsUsed: 0,
+      promptsLimit: 4,
+      promptsUsed: 0,
+      promptsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      modelsLimit: 1,
+      dataRetentionDays: 30,
+      hasPaymentMethod: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Insert billing profile
+    const billingProfilesCollection = airankDb.collection('billingprofiles');
+    await billingProfilesCollection.insertOne(billingProfile);
+
+    // Add user as billing profile manager
+    const billingProfileMember = {
+      _id: new mongoose.Types.ObjectId().toString(),
+      billingProfileId,
+      userId: user.sub || user._id,
+      role: 'manager',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const billingProfileMembersCollection = airankDb.collection('billingprofilemembers');
+    await billingProfileMembersCollection.insertOne(billingProfileMember);
+
+    // Link workspace to billing profile
+    workspace.billingProfileId = billingProfileId;
+    await workspaceCollection.updateOne(
+      { _id: workspaceId },
+      { $set: { billingProfileId } }
+    );
+
     // Create the workspace database
     const workspaceDbUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
     const workspaceDb = mongoose.createConnection(workspaceDbUri);
