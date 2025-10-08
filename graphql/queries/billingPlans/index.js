@@ -1,155 +1,138 @@
 const { gql } = require('apollo-server-express');
 
-const plans = [
-  {
-    id: 'free',
-    name: 'Always Free',
-    price: '$0',
-    priceId: null,
-
-    // Limits
-    brandsLimit: 1,
-    promptsLimit: 4,           // 4 queries/month
-    modelsLimit: 1,            // Limited to 1 model
-    batchFrequency: 'weekly',
-    dataRetentionDays: 30,
-
-    // Allowed models (only basic)
-    allowedModels: ['gpt-4o-mini'],  // Just one basic model
-
-    features: [
-      '1 brand monitored',
-      '4 queries per month',
-      '1 AI model',
-      'Weekly monitoring',
-      '30-day data retention'
-    ],
-
-    // Metadata
-    isFree: true,
-    purpose: 'Customer acquisition funnel',
-    costPerMonth: 0.001,
-    conversionTarget: '10% to paid plans'
-  },
-
-  {
-    id: 'small',
-    name: 'Small',
-    price: '$29',
-    priceId: process.env.STRIPE_PRICE_ID_SMALL,
-    priceIdAnnual: process.env.STRIPE_PRICE_ID_SMALL_ANNUAL, // $290/year
-
-    // Limits
-    brandsLimit: 4,            // 1 primary + 3 competitors
-    promptsLimit: 10,          // 10 search phrases
-    modelsLimit: 3,
-    batchFrequency: 'daily',
-    dataRetentionDays: 365,
-
-    // Allowed models
-    allowedModels: [
-      'gpt-4o-mini',
-      'claude-3-5-haiku',
-      'gemini-1.5-flash'
-    ],
-
-    features: [
-      '4 brands (1 primary + 3 competitors)',
-      '10 search phrases',
-      '3 AI models (GPT-4o-mini, Claude Haiku, Gemini Flash)',
-      'Daily monitoring',
-      '1-year data retention',
-      'Annual: $290/year (save $58)'
-    ],
-
-    // Metadata
-    target: 'Small businesses, freelancers',
-    isPopular: true,
-    annualPrice: '$290',
-    annualSavings: 'Save 2 months'
-  },
-
-  {
-    id: 'medium',
-    name: 'Medium',
-    price: '$149',
-    priceId: process.env.STRIPE_PRICE_ID_MEDIUM,
-    priceIdAnnual: process.env.STRIPE_PRICE_ID_MEDIUM_ANNUAL, // $1,490/year
-
-    // Limits
-    brandsLimit: 10,           // 1 primary + 9 competitors
-    promptsLimit: 20,          // 20 search phrases
-    modelsLimit: 6,
-    batchFrequency: 'daily',
-    dataRetentionDays: 730,    // 2 years
-
-    // Allowed models (3 basic + 3 professional)
-    allowedModels: [
-      // Basic
-      'gpt-4o-mini',
-      'claude-3-5-haiku',
-      'gemini-1.5-flash',
-      // Professional
-      'gpt-4o',
-      'claude-3-5-sonnet',
-      'gemini-1.5-pro'
-    ],
-
-    features: [
-      '10 brands (1 primary + 9 competitors)',
-      '20 search phrases',
-      '6 AI models (3 basic + 3 professional)',
-      'Daily monitoring',
-      '2-year data retention',
-      'Priority support',
-      'Annual: $1,490/year (save $298)'
-    ],
-
-    // Metadata
-    target: 'Growing businesses, agencies',
-    annualPrice: '$1,490',
-    annualSavings: 'Save 2 months'
-  },
-
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 'Starting at $1,000',
-    priceId: null, // Custom pricing via quotes
-
-    // Limits (unlimited)
-    brandsLimit: -1,           // Custom competitors
-    promptsLimit: -1,          // Custom phrases
-    modelsLimit: -1,           // All models
-    batchFrequency: 'custom',
-    dataRetentionDays: -1,     // Unlimited retention
-
-    // Allowed models (all including premium)
-    allowedModels: ['*'],      // All models including o1, o1-pro, etc.
-
-    features: [
-      'Custom number of competitors',
-      'Custom search phrases',
-      'All available models including premium (o1, o1-pro)',
-      'Custom monitoring frequency',
-      'Unlimited data retention',
-      'Custom integrations',
-      'Dedicated account manager',
-      'SLA guarantee',
-      'Annual contracts: 20% discount',
-      'Setup fee: $2,500 (waived with annual)'
-    ],
-
-    // Metadata
-    isEnterprise: true,
-    target: 'Large organizations',
-    minimumPrice: 1000,
-    setupFee: 2500,
-    setupFeeWaivedAnnual: true,
-    annualDiscount: 0.20,
-    requiresQuote: true
-  }
-];
+// Initialize Stripe - use real key if available, otherwise create a mock for testing
+let stripe;
+const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.PAYMENTS_SECRET_KEY;
+if (stripeKey && stripeKey !== 'sk_test' && stripeKey.startsWith('sk_')) {
+  stripe = require('stripe')(stripeKey);
+} else {
+  // Mock Stripe for testing - returns sample plans
+  stripe = {
+    products: {
+      list: async () => {
+        console.log('  [Mock Stripe] Fetching products');
+        return {
+          data: [
+            {
+              id: 'prod_free',
+              name: 'Always Free',
+              description: '1 brand, 4 queries/month, 1 model, weekly monitoring',
+              active: true,
+              metadata: {
+                plan_id: 'free',
+                brands_limit: '1',
+                prompts_limit: '4',
+                models_limit: '1',
+                batch_frequency: 'weekly',
+                data_retention_days: '30',
+                allowed_models: 'gpt-4o-mini',
+                is_free: 'true',
+                target: 'Customer acquisition funnel'
+              },
+              default_price: null
+            },
+            {
+              id: 'prod_small',
+              name: 'Small',
+              description: '4 brands, 10 prompts, 3 models, daily monitoring',
+              active: true,
+              metadata: {
+                plan_id: 'small',
+                brands_limit: '4',
+                prompts_limit: '10',
+                models_limit: '3',
+                batch_frequency: 'daily',
+                data_retention_days: '365',
+                allowed_models: 'gpt-4o-mini,claude-3-5-haiku,gemini-1.5-flash',
+                is_popular: 'true',
+                target: 'Small businesses, freelancers'
+              },
+              default_price: {
+                id: 'price_small_monthly',
+                unit_amount: 2900,
+                currency: 'usd',
+                recurring: { interval: 'month' },
+                metadata: { interval_label: 'month' }
+              }
+            },
+            {
+              id: 'prod_medium',
+              name: 'Medium',
+              description: '10 brands, 20 prompts, 6 models, daily monitoring',
+              active: true,
+              metadata: {
+                plan_id: 'medium',
+                brands_limit: '10',
+                prompts_limit: '20',
+                models_limit: '6',
+                batch_frequency: 'daily',
+                data_retention_days: '730',
+                allowed_models: 'gpt-4o-mini,claude-3-5-haiku,gemini-1.5-flash,gpt-4o,claude-3-5-sonnet,gemini-1.5-pro',
+                target: 'Growing businesses, agencies'
+              },
+              default_price: {
+                id: 'price_medium_monthly',
+                unit_amount: 14900,
+                currency: 'usd',
+                recurring: { interval: 'month' },
+                metadata: { interval_label: 'month' }
+              }
+            },
+            {
+              id: 'prod_enterprise',
+              name: 'Enterprise',
+              description: 'Custom everything - unlimited brands, prompts, all models',
+              active: true,
+              metadata: {
+                plan_id: 'enterprise',
+                brands_limit: '-1',
+                prompts_limit: '-1',
+                models_limit: '-1',
+                batch_frequency: 'custom',
+                data_retention_days: '-1',
+                allowed_models: '*',
+                is_enterprise: 'true',
+                requires_quote: 'true',
+                minimum_price: '1000',
+                setup_fee: '2500',
+                target: 'Large organizations'
+              },
+              default_price: null
+            }
+          ]
+        };
+      }
+    },
+    prices: {
+      list: async ({ product }) => {
+        console.log(`  [Mock Stripe] Fetching prices for product: ${product}`);
+        // Return annual prices for small and medium plans
+        if (product === 'prod_small') {
+          return {
+            data: [{
+              id: 'price_small_annual',
+              unit_amount: 29000, // $290/year
+              currency: 'usd',
+              recurring: { interval: 'year' }
+            }]
+          };
+        }
+        if (product === 'prod_medium') {
+          return {
+            data: [{
+              id: 'price_medium_annual',
+              unit_amount: 149000, // $1,490/year
+              currency: 'usd',
+              recurring: { interval: 'year' }
+            }]
+          };
+        }
+        // Free and enterprise have no additional prices
+        return { data: [] };
+      }
+    }
+  };
+}
 
 const typeDefs = gql`
   type BillingPlan {
@@ -195,9 +178,162 @@ const typeDefs = gql`
   }
 `;
 
+/**
+ * Convert Stripe product to BillingPlan format
+ */
+function stripeProductToPlan(product, prices = []) {
+  const meta = product.metadata || {};
+
+  // Parse limits from metadata
+  const brandsLimit = parseInt(meta.brands_limit || '1', 10);
+  const promptsLimit = parseInt(meta.prompts_limit || '4', 10);
+  const modelsLimit = parseInt(meta.models_limit || '1', 10);
+  const dataRetentionDays = parseInt(meta.data_retention_days || '30', 10);
+
+  // Parse allowed models
+  const allowedModelsStr = meta.allowed_models || '';
+  const allowedModels = allowedModelsStr === '*' ? ['*'] : allowedModelsStr.split(',').filter(Boolean);
+
+  // Find monthly and annual prices
+  const monthlyPrice = prices.find(p => p.recurring?.interval === 'month') || product.default_price;
+  const annualPrice = prices.find(p => p.recurring?.interval === 'year');
+
+  // Format price display
+  let priceDisplay = '$0';
+  let priceId = null;
+  let priceIdAnnual = null;
+  let annualPriceDisplay = null;
+  let annualSavings = null;
+
+  if (monthlyPrice && monthlyPrice.unit_amount) {
+    priceDisplay = `$${(monthlyPrice.unit_amount / 100).toFixed(0)}`;
+    priceId = monthlyPrice.id;
+  }
+
+  if (annualPrice && annualPrice.unit_amount) {
+    annualPriceDisplay = `$${(annualPrice.unit_amount / 100).toFixed(0)}`;
+    priceIdAnnual = annualPrice.id;
+
+    // Calculate savings
+    if (monthlyPrice && monthlyPrice.unit_amount) {
+      const monthlyCost = monthlyPrice.unit_amount * 12;
+      const savings = monthlyCost - annualPrice.unit_amount;
+      if (savings > 0) {
+        annualSavings = `Save $${(savings / 100).toFixed(0)}`;
+      }
+    }
+  }
+
+  if (meta.is_enterprise === 'true') {
+    priceDisplay = `Starting at $${meta.minimum_price || '1,000'}`;
+  }
+
+  // Build features list from description and metadata
+  const features = [];
+  if (meta.brands_limit) {
+    const limit = brandsLimit === -1 ? 'Unlimited' : brandsLimit;
+    features.push(`${limit} brand${brandsLimit !== 1 ? 's' : ''} monitored`);
+  }
+  if (meta.prompts_limit) {
+    const limit = promptsLimit === -1 ? 'Unlimited' : promptsLimit;
+    features.push(`${limit} search phrase${promptsLimit !== 1 ? 's' : ''}`);
+  }
+  if (meta.models_limit) {
+    const limit = modelsLimit === -1 ? 'All' : modelsLimit;
+    features.push(`${limit} AI model${modelsLimit !== 1 ? 's' : ''}`);
+  }
+  if (meta.batch_frequency) {
+    const freq = meta.batch_frequency.charAt(0).toUpperCase() + meta.batch_frequency.slice(1);
+    features.push(`${freq} monitoring`);
+  }
+  if (meta.data_retention_days) {
+    const days = dataRetentionDays === -1 ? 'Unlimited' : `${dataRetentionDays}-day`;
+    features.push(`${days} data retention`);
+  }
+
+  return {
+    id: meta.plan_id || product.id,
+    name: product.name,
+    price: priceDisplay,
+    priceId,
+    priceIdAnnual,
+    annualPrice: annualPriceDisplay,
+    annualSavings,
+
+    // Limits
+    brandsLimit,
+    promptsLimit,
+    modelsLimit,
+    batchFrequency: meta.batch_frequency || 'weekly',
+    dataRetentionDays,
+
+    // Allowed models
+    allowedModels,
+
+    // Features
+    features,
+
+    // Metadata
+    isFree: meta.is_free === 'true',
+    isPopular: meta.is_popular === 'true',
+    isEnterprise: meta.is_enterprise === 'true',
+    target: meta.target,
+    purpose: meta.purpose,
+    costPerMonth: monthlyPrice?.unit_amount ? monthlyPrice.unit_amount / 100 : 0,
+    conversionTarget: meta.conversion_target,
+    minimumPrice: meta.minimum_price ? parseInt(meta.minimum_price, 10) : null,
+    setupFee: meta.setup_fee ? parseInt(meta.setup_fee, 10) : null,
+    setupFeeWaivedAnnual: meta.setup_fee_waived_annual === 'true',
+    annualDiscount: meta.annual_discount ? parseFloat(meta.annual_discount) : null,
+    requiresQuote: meta.requires_quote === 'true'
+  };
+}
+
 const resolvers = {
-  billingPlans: () => plans,
-  billingPlan: (_, { id }) => plans.find(p => p.id === id)
+  billingPlans: async () => {
+    try {
+      // Fetch all active products from Stripe with prices expanded
+      const products = await stripe.products.list({
+        active: true,
+        expand: ['data.default_price']
+      });
+
+      // Convert each product to plan format
+      const plans = await Promise.all(
+        products.data.map(async (product) => {
+          // Fetch all prices for this product
+          const prices = await stripe.prices.list({
+            product: product.id,
+            active: true
+          });
+
+          return stripeProductToPlan(product, prices.data);
+        })
+      );
+
+      // Sort: free first, then by price
+      return plans.sort((a, b) => {
+        if (a.isFree) return -1;
+        if (b.isFree) return 1;
+        if (a.isEnterprise) return 1;
+        if (b.isEnterprise) return -1;
+        return a.costPerMonth - b.costPerMonth;
+      });
+    } catch (error) {
+      console.error('Error fetching plans from Stripe:', error);
+      throw new Error('Failed to fetch billing plans');
+    }
+  },
+
+  billingPlan: async (_, { id }) => {
+    try {
+      const allPlans = await resolvers.billingPlans();
+      return allPlans.find(p => p.id === id) || null;
+    } catch (error) {
+      console.error('Error fetching plan from Stripe:', error);
+      throw new Error('Failed to fetch billing plan');
+    }
+  }
 };
 
-module.exports = { typeDefs, resolvers, plans };
+module.exports = { typeDefs, resolvers };
