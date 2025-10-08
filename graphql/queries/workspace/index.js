@@ -9,8 +9,9 @@ const Workspace = mongoose.model('Workspace', new mongoose.Schema({
   workspaceCode: { type: String, required: true },
   inviteCode: { type: String, required: true },
   creatorId: { type: String, required: true },
-  chargebeeSubscriptionId: { type: String, required: true },
-  chargebeeCustomerId: { type: String, required: true },
+  chargebeeSubscriptionId: { type: String }, // Legacy - no longer required
+  chargebeeCustomerId: { type: String }, // Legacy - no longer required
+  billingProfileId: { type: String }, // NEW - Stripe billing profile
   name: { type: String, required: true },
   slug: { type: String, required: true },
   createdAt: { type: Date, required: true },
@@ -24,24 +25,26 @@ const typeDefs = gql`
     workspaceCode: String!
     inviteCode: String!
     creatorId: String!
-    chargebeeSubscriptionId: String!
-    chargebeeCustomerId: String!
+    chargebeeSubscriptionId: String # Legacy
+    chargebeeCustomerId: String # Legacy
+    billingProfileId: String
     name: String!
     slug: String!
     createdAt: String!
     updatedAt: String!
+    billingProfile: BillingProfile # Resolver to fetch billing profile
   }
 `;
 
 // Define the resolvers
 const resolvers = {
-    workspace: async (_, { workspaceId }, { user }) => { 
+    workspace: async (_, { workspaceId }, { user }) => {
       if (user) {
-        
-  
+
+
         // Find member with the user's userId
-        const member = await Member.findOne({ 
-          workspaceId, 
+        const member = await Member.findOne({
+          workspaceId,
           userId: user.sub,
           permissions: "query:workspaces" // Check if permissions include 'query:workspaces'
         });
@@ -61,7 +64,16 @@ const resolvers = {
         console.error('User not authenticated');
         return null;
       }
+    },
+
+    // Field resolvers for Workspace type
+    Workspace: {
+      billingProfile: async (workspace) => {
+        if (!workspace.billingProfileId) return null;
+        const { BillingProfile } = require('../billingProfile');
+        return await BillingProfile().findById(workspace.billingProfileId);
+      }
     }
 };
 
-module.exports = { typeDefs, resolvers };
+module.exports = { typeDefs, resolvers, Workspace: () => Workspace };
