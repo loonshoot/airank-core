@@ -59,6 +59,8 @@ mongoose.connect(mongoUri)
     const { typeDefs: brandTypeDefs, resolvers: brandResolvers } = require('./queries/brand');
     const { typeDefs: modelTypeDefs, resolvers: modelResolvers } = require('./queries/model');
     const { typeDefs: analyticsTypeDefs, resolvers: analyticsResolvers } = require('./queries/analytics');
+    const { typeDefs: billingProfileTypeDefs, resolvers: billingProfileResolvers } = require('./queries/billingProfile');
+    const { typeDefs: billingPlansTypeDefs, resolvers: billingPlansResolvers } = require('./queries/billingPlans');
     const { scheduleJobMutation } = require('./mutations/scheduleJob');
     const { createSource } = require('./mutations/createSource'); 
     const { updateSource } = require('./mutations/updateSource'); 
@@ -78,6 +80,13 @@ mongoose.connect(mongoUri)
     const { createModel } = require('./mutations/createModel');
     const { updateModel } = require('./mutations/updateModel');
     const { deleteModel } = require('./mutations/deleteModel');
+    const { resolvers: createBillingProfileResolvers } = require('./mutations/createBillingProfile');
+    const { resolvers: attachBillingProfileResolvers } = require('./mutations/attachBillingProfile');
+    const { resolvers: createSubscriptionResolvers } = require('./mutations/createSubscription');
+    const { resolvers: confirmSubscriptionResolvers } = require('./mutations/confirmSubscription');
+    const { resolvers: changePlanResolvers } = require('./mutations/changePlan');
+    const { resolvers: createSetupIntentResolvers } = require('./mutations/createSetupIntent');
+    const { resolvers: savePaymentMethodResolvers } = require('./mutations/savePaymentMethod');
 
     // Combine typeDefs and resolvers
     const typeDefs = [
@@ -92,6 +101,8 @@ mongoose.connect(mongoUri)
         brandTypeDefs,
         modelTypeDefs,
         analyticsTypeDefs,
+        billingProfileTypeDefs,
+        billingPlansTypeDefs,
         gql`
           type Query {
             workspace(workspaceId: String, workspaceSlug: String): Workspace
@@ -112,6 +123,8 @@ mongoose.connect(mongoUri)
             brands(workspaceId: String, workspaceSlug: String, brandId: String): [Brand]
             models(workspaceId: String, workspaceSlug: String, modelId: String): [Model]
             analytics(workspaceId: String!, startDate: String, endDate: String): AnalyticsData
+            billingProfiles(billingProfileId: ID): [BillingProfile]
+            billingPlans: [BillingPlan]
           }
 
           type Job {
@@ -196,6 +209,13 @@ mongoose.connect(mongoUri)
             createModel(workspaceId: String, workspaceSlug: String, name: String!, provider: String!, modelId: String!, isEnabled: Boolean): Model
             updateModel(workspaceId: String, workspaceSlug: String, id: ID!, name: String, provider: String, modelId: String, isEnabled: Boolean): Model
             deleteModel(workspaceId: String, workspaceSlug: String, id: ID!): ModelDeletionResponse
+            createBillingProfile(name: String!, workspaceId: ID): BillingProfile
+            attachBillingProfile(workspaceId: ID!, billingProfileId: ID!): Workspace
+            createSubscription(billingProfileId: ID!, planId: String!, interval: String!): SubscriptionResult
+            confirmSubscription(billingProfileId: ID!): BillingProfile
+            changePlan(billingProfileId: ID!, newPlanId: String!, interval: String!): BillingProfile
+            createSetupIntent(billingProfileId: ID!): SetupIntentResult
+            savePaymentMethod(billingProfileId: ID!, paymentMethodId: String!): BillingProfile
           }
 
           type JobScheduleResponse {
@@ -387,6 +407,12 @@ mongoose.connect(mongoUri)
                     throw new Error('Workspace not found.');
                 }
                 return analyticsResolvers.analytics(parent, { ...args, workspaceId }, context);
+            },
+            billingProfiles: async (parent, args, context) => {
+                return billingProfileResolvers.billingProfiles(parent, args, context);
+            },
+            billingPlans: async (parent, args, context) => {
+                return billingPlansResolvers.billingPlans(parent, args, context);
             }
         },
         Mutation: {
@@ -518,6 +544,27 @@ mongoose.connect(mongoUri)
                 throw new Error('Workspace not found.');
             }
             return deleteModel(parent, { ...args, workspaceId }, context);
+          },
+          createBillingProfile: async (parent, args, context) => {
+            return createBillingProfileResolvers.createBillingProfile(parent, args, context);
+          },
+          attachBillingProfile: async (parent, args, context) => {
+            return attachBillingProfileResolvers.attachBillingProfile(parent, args, context);
+          },
+          createSubscription: async (parent, args, context) => {
+            return createSubscriptionResolvers.createSubscription(parent, args, context);
+          },
+          confirmSubscription: async (parent, args, context) => {
+            return confirmSubscriptionResolvers.confirmSubscription(parent, args, context);
+          },
+          changePlan: async (parent, args, context) => {
+            return changePlanResolvers.changePlan(parent, args, context);
+          },
+          createSetupIntent: async (parent, args, context) => {
+            return createSetupIntentResolvers.createSetupIntent(parent, args, context);
+          },
+          savePaymentMethod: async (parent, args, context) => {
+            return savePaymentMethodResolvers.savePaymentMethod(parent, args, context);
           }
         }
     };
