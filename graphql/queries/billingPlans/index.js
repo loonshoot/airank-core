@@ -246,10 +246,6 @@ function stripeProductToPlan(product, prices = []) {
     const freq = meta.batch_frequency.charAt(0).toUpperCase() + meta.batch_frequency.slice(1);
     features.push(`${freq} monitoring`);
   }
-  if (meta.data_retention_days) {
-    const days = dataRetentionDays === -1 ? 'Unlimited' : `${dataRetentionDays}-day`;
-    features.push(`${days} data retention`);
-  }
 
   return {
     id: meta.plan_id || product.id,
