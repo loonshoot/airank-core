@@ -188,15 +188,23 @@ const resolvers = {
     }
 
     // Create subscription
-    const subscription = await stripe.subscriptions.create({
+    // If customer has a payment method, charge immediately
+    // Otherwise, require payment method to be added first
+    const subscriptionParams = {
       customer: customerId,
       items: [{ price: price.id }],
-      payment_behavior: 'default_incomplete',
       metadata: {
         billingProfileId: billingProfile._id.toString(),
         planId
       }
-    });
+    };
+
+    // Only use default_incomplete if no payment method exists
+    if (!billingProfile.hasPaymentMethod) {
+      subscriptionParams.payment_behavior = 'default_incomplete';
+    }
+
+    const subscription = await stripe.subscriptions.create(subscriptionParams);
 
     // Update plan limits from product metadata
     const meta = product.metadata;

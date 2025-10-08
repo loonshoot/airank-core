@@ -122,10 +122,13 @@ const resolvers = {
       throw new Error('Authentication required');
     }
 
-    // Check user is manager of billing profile
-    const billingMember = await BillingProfileMember().findOne({
+    const userId = user.sub || user._id;
+    const db = mongoose.connection.db;
+
+    // Check user is manager of billing profile using direct collection access
+    const billingMember = await db.collection('billingprofilemembers').findOne({
       billingProfileId,
-      userId: user.sub || user._id,
+      userId,
       role: 'manager'
     });
 
@@ -133,8 +136,8 @@ const resolvers = {
       throw new Error('Only billing profile managers can change plans');
     }
 
-    // Get billing profile
-    const billingProfile = await BillingProfile().findById(billingProfileId);
+    // Get billing profile using direct collection access
+    const billingProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
     if (!billingProfile) {
       throw new Error('Billing profile not found');
     }
@@ -164,29 +167,40 @@ const resolvers = {
     // Retrieve current subscription
     const subscription = await stripe.subscriptions.retrieve(billingProfile.stripeSubscriptionId);
 
-    // Update subscription with new price
+    // Update subscription with new price (proration charges immediately)
     await stripe.subscriptions.update(billingProfile.stripeSubscriptionId, {
       items: [{
         id: subscription.items.data[0].id,
         price: price.id
       }],
-      proration_behavior: 'create_prorations'
+      proration_behavior: 'create_prorations' // This charges the prorated amount immediately
     });
-
-    // Update billing profile with new plan details
-    billingProfile.currentPlan = newPlanId;
 
     // Update plan limits from product metadata
     const meta = product.metadata;
-    billingProfile.brandsLimit = meta.brands_limit === 'unlimited' ? 999999 : parseInt(meta.brands_limit);
-    billingProfile.promptsLimit = meta.prompts_limit === 'unlimited' ? 999999 : parseInt(meta.prompts_limit);
-    billingProfile.modelsLimit = meta.models_limit === 'unlimited' ? 999999 : parseInt(meta.models_limit);
-    billingProfile.dataRetentionDays = meta.data_retention_days === 'unlimited' ? 999999 : parseInt(meta.data_retention_days);
+    const brandsLimit = meta.brands_limit === 'unlimited' ? 999999 : parseInt(meta.brands_limit);
+    const promptsLimit = meta.prompts_limit === 'unlimited' ? 999999 : parseInt(meta.prompts_limit);
+    const modelsLimit = meta.models_limit === 'unlimited' ? 999999 : parseInt(meta.models_limit);
+    const dataRetentionDays = meta.data_retention_days === 'unlimited' ? 999999 : parseInt(meta.data_retention_days);
 
-    billingProfile.updatedAt = new Date();
-    await billingProfile.save();
+    // Update billing profile with new plan details
+    await db.collection('billingprofiles').updateOne(
+      { _id: billingProfileId },
+      {
+        $set: {
+          currentPlan: newPlanId,
+          brandsLimit,
+          promptsLimit,
+          modelsLimit,
+          dataRetentionDays,
+          updatedAt: new Date()
+        }
+      }
+    );
 
-    return billingProfile;
+    // Return updated billing profile
+    const updatedProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
+    return updatedProfile;
   }
 };
 
