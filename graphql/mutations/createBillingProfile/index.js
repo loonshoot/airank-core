@@ -1,6 +1,5 @@
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
-const { BillingProfile, BillingProfileMember } = require('../../queries/billingProfile');
 
 // Initialize Stripe - use real key if available, otherwise create a mock for testing
 let stripe;
@@ -34,39 +33,89 @@ const resolvers = {
   createBillingProfile: async (_, { name, workspaceId }, { user }) => {
     if (!user) throw new Error('Authentication required');
 
-    // Create billing profile
-    const billingProfile = await BillingProfile().create({
-      name,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    // Add user as manager
-    await BillingProfileMember().create({
-      billingProfileId: billingProfile._id.toString(),
-      userId: user.sub || user._id,
-      role: 'manager'
-    });
-
-    // Create Stripe customer
     try {
-      const customer = await stripe.customers.create({
-        name,
-        email: user.email,
-        metadata: {
-          billingProfileId: billingProfile._id.toString(),
-          workspaceId: workspaceId || '',
-          userId: user.sub || user._id
-        }
-      });
-      billingProfile.stripeCustomerId = customer.id;
-      await billingProfile.save();
-    } catch (error) {
-      console.error('Failed to create Stripe customer:', error);
-      // Continue anyway - customer can be created later
-    }
+      // Connect to the airank database
+      const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+      const airankDb = mongoose.createConnection(airankUri);
+      await airankDb.asPromise();
 
-    return billingProfile;
+      // If workspaceId provided, check user has permission
+      if (workspaceId) {
+        const membersCollection = airankDb.collection('members');
+        const member = await membersCollection.findOne({
+          workspaceId,
+          userId: user.sub,
+          permissions: 'mutation:updateConfig'
+        });
+
+        if (!member) {
+          await airankDb.close();
+          throw new Error('Unauthorized: You do not have permission to create billing profiles for this workspace');
+        }
+      }
+
+      // Create billing profile with free tier defaults
+      const billingProfileId = new mongoose.Types.ObjectId().toString();
+      const billingProfile = {
+        _id: billingProfileId,
+        name,
+        currentPlan: 'free',
+        brandsLimit: 1,
+        brandsUsed: 0,
+        promptsLimit: 4,
+        promptsUsed: 0,
+        promptsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        modelsLimit: 1,
+        dataRetentionDays: 30,
+        hasPaymentMethod: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const billingProfilesCollection = airankDb.collection('billingprofiles');
+      await billingProfilesCollection.insertOne(billingProfile);
+
+      // Add user as billing profile manager
+      const billingProfileMember = {
+        _id: new mongoose.Types.ObjectId().toString(),
+        billingProfileId,
+        userId: user.sub || user._id,
+        role: 'manager',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const billingProfileMembersCollection = airankDb.collection('billingprofilemembers');
+      await billingProfileMembersCollection.insertOne(billingProfileMember);
+
+      // Create Stripe customer
+      try {
+        const customer = await stripe.customers.create({
+          name,
+          email: user.email,
+          metadata: {
+            billingProfileId,
+            workspaceId: workspaceId || '',
+            userId: user.sub || user._id
+          }
+        });
+
+        await billingProfilesCollection.updateOne(
+          { _id: billingProfileId },
+          { $set: { stripeCustomerId: customer.id } }
+        );
+        billingProfile.stripeCustomerId = customer.id;
+      } catch (error) {
+        console.error('Failed to create Stripe customer:', error);
+        // Continue anyway - customer can be created later
+      }
+
+      await airankDb.close();
+      return billingProfile;
+    } catch (error) {
+      console.error('Error creating billing profile:', error);
+      throw error;
+    }
   }
 };
 

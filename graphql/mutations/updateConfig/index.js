@@ -54,17 +54,20 @@ async function updateWorkspaceConfigs(parent, { workspaceId, workspaceSlug, conf
       const now = new Date();
       let method = config.data.method || 'automatic';
 
+      // Get previous config to check for changes
+      const previousConfig = await ConfigModel.findOne({ configType: config.configType });
+
       // Update or create config
       const updatedConfig = await ConfigModel.findOneAndUpdate(
         { configType: config.configType },
-        { 
+        {
           $set: {
             data: config.data,
             method,
             updatedAt: now
           }
         },
-        { 
+        {
           new: true,
           upsert: true // Create if doesn't exist
         }
@@ -79,6 +82,36 @@ async function updateWorkspaceConfigs(parent, { workspaceId, workspaceSlug, conf
         method,
         timestamp: now
       });
+
+      // Special handling for billing config changes
+      if (config.configType === 'billing') {
+        const wasAdvanced = previousConfig?.data?.advancedBilling === true;
+        const isAdvanced = config.data.advancedBilling === true;
+
+        // If switching from advanced to simple billing, revert to default billing profile
+        if (wasAdvanced && !isAdvanced) {
+          const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+          const airankDb = mongoose.createConnection(airankUri);
+          await airankDb.asPromise();
+
+          const workspacesCollection = airankDb.collection('workspaces');
+          const workspace = await workspacesCollection.findOne({ _id: workspaceId });
+
+          if (workspace && workspace.defaultBillingProfileId) {
+            await workspacesCollection.updateOne(
+              { _id: workspaceId },
+              {
+                $set: {
+                  billingProfileId: workspace.defaultBillingProfileId,
+                  updatedAt: new Date()
+                }
+              }
+            );
+          }
+
+          await airankDb.close();
+        }
+      }
 
       updatedConfigs.push(updatedConfig);
     }

@@ -156,11 +156,19 @@ async function createWorkspace(parent, args, { user }) {
     const billingProfileMembersCollection = airankDb.collection('billingprofilemembers');
     await billingProfileMembersCollection.insertOne(billingProfileMember);
 
-    // Link workspace to billing profile
+    // Link workspace to billing profile and set as default
     workspace.billingProfileId = billingProfileId;
+    workspace.defaultBillingProfileId = billingProfileId;
+    workspace.config = { advancedBilling: false };
     await workspaceCollection.updateOne(
       { _id: workspaceId },
-      { $set: { billingProfileId } }
+      {
+        $set: {
+          billingProfileId,
+          defaultBillingProfileId: billingProfileId,
+          config: { advancedBilling: false }
+        }
+      }
     );
 
     // Create the workspace database

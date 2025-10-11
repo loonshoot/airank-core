@@ -11,7 +11,11 @@ const Workspace = mongoose.model('Workspace', new mongoose.Schema({
   creatorId: { type: String, required: true },
   chargebeeSubscriptionId: { type: String }, // Legacy - no longer required
   chargebeeCustomerId: { type: String }, // Legacy - no longer required
-  billingProfileId: { type: String }, // NEW - Stripe billing profile
+  billingProfileId: { type: String }, // Current billing profile (can change in advanced mode)
+  defaultBillingProfileId: { type: String }, // Original auto-created billing profile (cannot be deleted or shared)
+  config: {
+    advancedBilling: { type: Boolean, default: false } // Workspace-specific billing mode
+  },
   name: { type: String, required: true },
   slug: { type: String, required: true },
   createdAt: { type: Date, required: true },
@@ -20,6 +24,10 @@ const Workspace = mongoose.model('Workspace', new mongoose.Schema({
 
 // Define the typeDefs (schema)
 const typeDefs = gql`
+  type WorkspaceConfig {
+    advancedBilling: Boolean
+  }
+
   type Workspace {
     _id: String!
     workspaceCode: String!
@@ -28,11 +36,14 @@ const typeDefs = gql`
     chargebeeSubscriptionId: String # Legacy
     chargebeeCustomerId: String # Legacy
     billingProfileId: String
+    defaultBillingProfileId: String
+    config: WorkspaceConfig
     name: String!
     slug: String!
     createdAt: String!
     updatedAt: String!
     billingProfile: BillingProfile # Resolver to fetch billing profile
+    defaultBillingProfile: BillingProfile # Resolver to fetch default billing profile
   }
 `;
 
@@ -72,6 +83,11 @@ const resolvers = {
         if (!workspace.billingProfileId) return null;
         const { BillingProfile } = require('../billingProfile');
         return await BillingProfile().findById(workspace.billingProfileId);
+      },
+      defaultBillingProfile: async (workspace) => {
+        if (!workspace.defaultBillingProfileId) return null;
+        const { BillingProfile } = require('../billingProfile');
+        return await BillingProfile().findById(workspace.defaultBillingProfileId);
       }
     }
 };

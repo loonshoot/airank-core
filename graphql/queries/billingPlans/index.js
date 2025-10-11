@@ -294,6 +294,13 @@ const resolvers = {
         expand: ['data.default_price']
       });
 
+      console.log(`Found ${products.data.length} products in Stripe`);
+
+      if (products.data.length === 0) {
+        console.warn('No products found in Stripe. Run setup-stripe-products.js to create them.');
+        return [];
+      }
+
       // Convert each product to plan format
       const plans = await Promise.all(
         products.data.map(async (product) => {
@@ -307,8 +314,19 @@ const resolvers = {
         })
       );
 
+      // Deduplicate plans by plan_id (in case there are multiple products with same plan_id)
+      const uniquePlans = [];
+      const seenPlanIds = new Set();
+
+      for (const plan of plans) {
+        if (!seenPlanIds.has(plan.id)) {
+          seenPlanIds.add(plan.id);
+          uniquePlans.push(plan);
+        }
+      }
+
       // Sort: free first, then by price
-      return plans.sort((a, b) => {
+      return uniquePlans.sort((a, b) => {
         if (a.isFree) return -1;
         if (b.isFree) return 1;
         if (a.isEnterprise) return 1;
@@ -317,7 +335,8 @@ const resolvers = {
       });
     } catch (error) {
       console.error('Error fetching plans from Stripe:', error);
-      throw new Error('Failed to fetch billing plans');
+      console.error('Error details:', error.message, error.stack);
+      throw new Error(`Failed to fetch billing plans: ${error.message}`);
     }
   },
 
