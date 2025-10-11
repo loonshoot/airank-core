@@ -34,6 +34,7 @@ const typeDefs = gql`
     _id: String!
     configType: String!
     data: JSON!
+    method: String
     updatedAt: String!
     history: [HistoryEntry!]
   }
