@@ -190,6 +190,16 @@ async function createWorkspace(parent, args, { user }) {
       if (err.code !== 48) throw err;
     });
 
+    // Create initial billing config in workspace database
+    const configsCollection = workspaceDb.collection('configs');
+    await configsCollection.insertOne({
+      _id: new mongoose.Types.ObjectId(),
+      configType: 'billing',
+      data: { advancedBilling: false },
+      method: 'automatic',
+      updatedAt: new Date()
+    });
+
     // Close connections
     await Promise.all([
       airankDb.close(),
