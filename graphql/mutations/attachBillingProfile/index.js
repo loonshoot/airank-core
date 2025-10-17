@@ -54,16 +54,27 @@ const resolvers = {
 
       await workspaceDb.close();
 
-      // Verify user has access to the billing profile
-      const billingProfileMembersCollection = airankDb.collection('billingprofilemembers');
-      const billingProfileMember = await billingProfileMembersCollection.findOne({
-        billingProfileId,
-        userId: user.sub
-      });
+      // Check if this billing profile is the default for the current workspace
+      // If so, allow the user to attach it (they own the workspace and can manage its default billing)
+      const isDefaultForThisWorkspace = workspace.defaultBillingProfileId === billingProfileId;
 
-      if (!billingProfileMember) {
-        await airankDb.close();
-        throw new Error('Unauthorized: You do not have access to this billing profile');
+      if (!isDefaultForThisWorkspace) {
+        // Verify user has access to the billing profile AND has attach permission
+        const billingProfileMembersCollection = airankDb.collection('billingprofilemembers');
+        const billingProfileMember = await billingProfileMembersCollection.findOne({
+          billingProfileId,
+          userId: user.sub
+        });
+
+        if (!billingProfileMember) {
+          await airankDb.close();
+          throw new Error('Unauthorized: You do not have access to this billing profile');
+        }
+
+        if (!billingProfileMember.permissions?.attach) {
+          await airankDb.close();
+          throw new Error('Unauthorized: You do not have permission to attach this billing profile to workspaces');
+        }
       }
 
       // Prevent using default billing profile from another workspace

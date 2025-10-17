@@ -92,11 +92,21 @@ async function cleanup() {
     console.log('\n--- Switching to airank database to clear shared collections ---');
     const airankDb = client.db(OUTRUN_DB);
     console.log(`Connected to database: ${OUTRUN_DB}`);
-    
+
     // Clear jobs collection
     await dropCollection(airankDb, 'jobs');
     // Clear listener collection
-    await dropCollection(airankDb, 'listeners'); 
+    await dropCollection(airankDb, 'listeners');
+
+    // Clear billing-related collections
+    console.log('\n--- Clearing billing-related collections ---');
+    await dropCollection(airankDb, 'billingprofiles');
+    await dropCollection(airankDb, 'billingprofilemembers');
+
+    // Clear workspace-related collections
+    console.log('\n--- Clearing workspace-related collections ---');
+    await dropCollection(airankDb, 'workspaces');
+    await dropCollection(airankDb, 'members'); 
     
     // Summary
     console.log('\n--- Summary ---');
@@ -121,7 +131,7 @@ console.log('=== MongoDB Cleanup Script ===');
 console.log('WARNING: This will permanently delete data from your MongoDB databases!');
 console.log(`Database targets: ${WORKSPACE_DB} and ${OUTRUN_DB}`);
 console.log(`Collections to remove from ${WORKSPACE_DB}: ${SPECIFIC_COLLECTIONS.join(', ')}, and all source_* collections`);
-console.log(`Collections to remove from ${OUTRUN_DB}: jobs`);
+console.log(`Collections to remove from ${OUTRUN_DB}: jobs, listeners, billingprofiles, billingprofilemembers, workspaces, members`);
 console.log('');
 
 rl.question('Are you sure you want to continue? (y/n): ', (answer) => {

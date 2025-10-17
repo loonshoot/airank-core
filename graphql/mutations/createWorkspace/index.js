@@ -135,6 +135,8 @@ async function createWorkspace(parent, args, { user }) {
       modelsLimit: 1,
       dataRetentionDays: 30,
       hasPaymentMethod: false,
+      isDefault: true,  // This is a workspace default profile
+      defaultForWorkspaceId: workspaceId,  // Link to the workspace
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -143,12 +145,18 @@ async function createWorkspace(parent, args, { user }) {
     const billingProfilesCollection = airankDb.collection('billingprofiles');
     await billingProfilesCollection.insertOne(billingProfile);
 
-    // Add user as billing profile manager
+    // Add user as billing profile manager with full permissions
     const billingProfileMember = {
       _id: new mongoose.Types.ObjectId().toString(),
       billingProfileId,
       userId: user.sub || user._id,
       role: 'manager',
+      permissions: {
+        attach: true,  // Can attach to workspaces (though default profiles can't be shared)
+        modify: true,  // Can modify settings and members
+        delete: true   // Can delete (though default profiles can't be deleted)
+      },
+      addedBy: user.sub || user._id, // Creator added themselves
       createdAt: new Date(),
       updatedAt: new Date()
     };
