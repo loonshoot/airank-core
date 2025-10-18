@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { Member } = require('../../queries/member');
+const { canPerformAction } = require('../helpers/entitlements');
 
 // Define the Brand Model factory for workspace-specific connections
 const Brand = (workspaceId) => {
@@ -34,6 +35,12 @@ async function createBrand(parent, args, { user }) {
 
     if (!member) {
       throw new Error('User not authorized to create brands');
+    }
+
+    // Check entitlements - can user create another brand?
+    const canCreate = await canPerformAction(workspaceId || workspaceSlug, 'createBrand');
+    if (!canCreate.allowed) {
+      throw new Error(`Cannot create brand: ${canCreate.reason}`);
     }
 
     // Get the workspace-specific model

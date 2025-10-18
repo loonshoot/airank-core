@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { Member } = require('../../queries/member');
+const { canPerformAction, getEntitlements } = require('../helpers/entitlements');
 
 // Define the Model factory for workspace-specific connections
 const Model = (workspaceId) => {
@@ -36,6 +37,21 @@ async function createModel(parent, args, { user }) {
 
     if (!member) {
       throw new Error('User not authorized to create models');
+    }
+
+    // Check entitlements - can user add another model?
+    const canCreate = await canPerformAction(workspaceId || workspaceSlug, 'addModel');
+    if (!canCreate.allowed) {
+      throw new Error(`Cannot add model: ${canCreate.reason}`);
+    }
+
+    // Check if this specific model is allowed in the plan
+    const entitlements = await getEntitlements(workspaceId || workspaceSlug);
+    const isModelAllowed = entitlements.allowedModels.length === 0 ||
+                          entitlements.allowedModels.includes(modelId);
+
+    if (!isModelAllowed) {
+      throw new Error(`Model ${modelId} is not included in your current plan. Please upgrade to access this model.`);
     }
 
     // Get the workspace-specific model

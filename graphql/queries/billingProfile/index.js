@@ -38,6 +38,19 @@ const billingProfileSchema = new mongoose.Schema({
   modelsLimit: { type: Number, default: 1 },       // How many different models allowed
   dataRetentionDays: { type: Number, default: 30 }, // How long to keep data
 
+  // Entitlements
+  promptCharacterLimit: { type: Number, default: 25 }, // Max characters per prompt
+  allowedModels: [String],                        // Array of model IDs allowed for this plan
+  jobFrequency: { type: String, enum: ['monthly', 'daily'], default: 'monthly' },
+  nextJobRunDate: Date,                           // When next job should run
+
+  // Subscription timing
+  planExpiry: Date,                               // When current subscription period ends
+
+  // Payment failure handling
+  paymentFailedAt: Date,                          // When payment first failed
+  gracePeriodEndsAt: Date,                        // 30 days from payment failure
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
@@ -112,6 +125,19 @@ const typeDefs = gql`
     promptsResetDate: DateTime
     modelsLimit: Int!
     dataRetentionDays: Int!
+
+    # Entitlements
+    promptCharacterLimit: Int!
+    allowedModels: [String]
+    jobFrequency: String!
+    nextJobRunDate: DateTime
+
+    # Subscription timing
+    planExpiry: DateTime
+
+    # Payment failure handling
+    paymentFailedAt: DateTime
+    gracePeriodEndsAt: DateTime
 
     members: [BillingProfileMember]
   }

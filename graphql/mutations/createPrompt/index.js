@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { Member } = require('../../queries/member');
+const { canPerformAction, enforceCharacterLimit, getEntitlements } = require('../helpers/entitlements');
 
 // Define the Prompt Model factory for workspace-specific connections
 const Prompt = (workspaceId) => {
@@ -35,13 +36,27 @@ async function createPrompt(parent, args, { user }) {
       throw new Error('User not authorized to create prompts');
     }
 
+    // Check entitlements - can user create another prompt?
+    const canCreate = await canPerformAction(workspaceId || workspaceSlug, 'createPrompt');
+    if (!canCreate.allowed) {
+      throw new Error(`Cannot create prompt: ${canCreate.reason}`);
+    }
+
+    // Enforce character limit on the phrase
+    const entitlements = await getEntitlements(workspaceId || workspaceSlug);
+    const enforcedPhrase = enforceCharacterLimit(phrase, entitlements.promptCharacterLimit);
+
+    if (enforcedPhrase.isTruncated) {
+      console.warn(`Prompt truncated from ${enforcedPhrase.originalLength} to ${enforcedPhrase.limit} characters`);
+    }
+
     // Get the workspace-specific model
     const PromptModel = Prompt(workspaceId || workspaceSlug);
 
-    // Create the prompt
+    // Create the prompt with enforced character limit
     const prompt = new PromptModel({
       _id: new mongoose.Types.ObjectId(),
-      phrase,
+      phrase: enforcedPhrase.truncated,
       workspaceId: workspaceId || workspaceSlug
     });
 

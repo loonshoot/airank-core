@@ -1,0 +1,35 @@
+# Model Priority Configuration
+#
+# This file defines the priority order for models when a user downgrades
+# and needs to reduce their active model count. Models are listed from
+# highest priority (most common/popular) to lowest priority.
+#
+# When downgrading, the system will keep the highest priority models
+# that fit within the new plan limit and mark the rest as "Upgrade Required".
+#
+# Priority: 1 = Highest priority (most likely to keep)
+
+priority:
+  # Tier 1: Current flagship models (most popular)
+  - gpt-4o                           # ChatGPT default model
+  - claude-3-5-sonnet-20241022       # Claude default model
+  - gemini-2.0-flash-exp             # Gemini default model
+
+  # Tier 2: High-performance alternatives
+  - gpt-4-turbo                      # GPT-4 Turbo
+  - claude-3-5-haiku-20241022        # Claude Haiku (fast)
+  - gemini-1.5-pro                   # Gemini Pro
+
+  # Tier 3: Specialized/Legacy models
+  - gpt-4                            # GPT-4 (legacy)
+  - claude-3-opus-20240229           # Claude Opus (legacy)
+  - gemini-1.5-flash                 # Gemini Flash (legacy)
+  - gpt-3.5-turbo                    # GPT-3.5 (legacy)
+
+  # Tier 4: Other available models
+  - claude-3-sonnet-20240229         # Claude Sonnet (legacy)
+  - claude-3-haiku-20240307          # Claude Haiku (legacy)
+  - gemini-1.0-pro                   # Gemini 1.0
+
+# Note: Models not listed here will be assigned lowest priority
+# and will be the first to be marked as "Upgrade Required"
