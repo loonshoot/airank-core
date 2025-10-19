@@ -40,10 +40,19 @@ async function getBillingProfileForWorkspace(workspaceId) {
       throw new Error('Workspace not found or has no billing profile');
     }
 
-    // Get billing profile
+    // Get billing profile - handle both string and ObjectId types
+    const billingProfileId = typeof workspace.billingProfileId === 'string'
+      ? workspace.billingProfileId
+      : workspace.billingProfileId.toString();
+
     const billingProfile = await airankDb.collection('billingprofiles').findOne({
-      _id: workspace.billingProfileId
+      _id: billingProfileId
     });
+
+    if (!billingProfile) {
+      await airankDb.close();
+      throw new Error(`Billing profile not found: ${billingProfileId}`);
+    }
 
     await airankDb.close();
     return billingProfile;
@@ -175,11 +184,25 @@ async function canPerformAction(workspaceId, action) {
         reason: entitlements.promptsRemaining > 0 ? null : `Prompt limit reached (${entitlements.promptsUsed}/${entitlements.promptsLimit}). Limits reset monthly.`
       };
 
-    case 'addModel':
+    case 'addModel': {
+      // Count actual enabled models in workspace
+      let actualModelsUsed = 0;
+      try {
+        const dataLakeUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
+        const datalake = mongoose.createConnection(dataLakeUri);
+        await datalake.asPromise();
+        actualModelsUsed = await datalake.collection('models').countDocuments({ workspaceId, isEnabled: true });
+        await datalake.close();
+      } catch (error) {
+        console.error('Error counting models:', error);
+      }
+
+      const modelsRemaining = Math.max(0, entitlements.modelsLimit - actualModelsUsed);
       return {
-        allowed: entitlements.brandsRemaining > 0,
-        reason: entitlements.brandsRemaining > 0 ? null : `Model limit reached (${entitlements.modelsLimit}). Upgrade your plan to add more models.`
+        allowed: modelsRemaining > 0,
+        reason: modelsRemaining > 0 ? null : `Model limit reached (${actualModelsUsed}/${entitlements.modelsLimit}). Upgrade your plan to add more models.`
       };
+    }
 
     default:
       return { allowed: false, reason: 'Unknown action' };

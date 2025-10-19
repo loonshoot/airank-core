@@ -6,13 +6,23 @@ const path = require('path');
 
 // GraphQL type definitions
 const typeDefs = gql`
+  type SuggestedUpgradeModel {
+    modelId: String!
+    name: String!
+  }
+
   type ModelEntitlement {
     modelId: String!
     name: String!
     provider: String!
+    description: String!
     isAllowed: Boolean!
     requiresUpgrade: Boolean!
     priority: Int!
+    isCurrentlyEnabled: Boolean!
+    isSelectable: Boolean!
+    allowedInBatchJobs: Boolean!
+    suggestedUpgrade: SuggestedUpgradeModel
   }
 
   type Entitlements {
@@ -74,6 +84,29 @@ function getModelPriorities() {
 }
 
 /**
+ * Get all models configuration from YAML
+ */
+function getModelsConfig() {
+  try {
+    const configPath = path.join(__dirname, '../../../config/models.yaml');
+    const fileContents = fs.readFileSync(configPath, 'utf8');
+    const config = yaml.load(fileContents);
+    return config.models || [];
+  } catch (error) {
+    console.error('Error loading models config:', error);
+    return [];
+  }
+}
+
+/**
+ * Get model config by ID
+ */
+function getModelConfig(modelId) {
+  const models = getModelsConfig();
+  return models.find(m => m.modelId === modelId) || null;
+}
+
+/**
  * Get billing profile for a workspace
  */
 async function getBillingProfileForWorkspace(workspaceId) {
@@ -89,10 +122,19 @@ async function getBillingProfileForWorkspace(workspaceId) {
       throw new Error('Workspace not found or has no billing profile');
     }
 
-    // Get billing profile
+    // Get billing profile - handle both string and ObjectId types
+    const billingProfileId = typeof workspace.billingProfileId === 'string'
+      ? workspace.billingProfileId
+      : workspace.billingProfileId.toString();
+
     const billingProfile = await airankDb.collection('billingprofiles').findOne({
-      _id: workspace.billingProfileId
+      _id: billingProfileId
     });
+
+    if (!billingProfile) {
+      await airankDb.close();
+      throw new Error(`Billing profile not found: ${billingProfileId}`);
+    }
 
     await airankDb.close();
     return billingProfile;
@@ -139,33 +181,65 @@ async function getWorkspaceModels(workspaceId) {
 
 /**
  * Enforce model limits and mark models as requiring upgrade
+ * This function evaluates ALL available models from YAML configuration
  */
-function enforceModelLimits(models, modelsLimit, allowedModels = []) {
+function enforceModelLimits(enabledModels, modelsLimit, allowedModels = []) {
   const modelPriorities = getModelPriorities();
+  const modelsConfig = getModelsConfig();
 
-  // Sort models by priority
-  const sortedModels = models.map(model => {
-    const priorityIndex = modelPriorities.indexOf(model.modelId);
+  // Filter to only models that should be shown in UI
+  const uiModels = modelsConfig.filter(m => m.showInUI);
+
+  // Count currently enabled models (only count selectable ones for limit purposes)
+  const enabledSelectableCount = enabledModels.filter(em => {
+    const config = modelsConfig.find(m => m.modelId === em.modelId);
+    return config && config.isSelectable;
+  }).length;
+
+  // Map all UI models with entitlement info
+  return uiModels.map(modelConfig => {
+    const isCurrentlyEnabled = enabledModels.some(em => em.modelId === modelConfig.modelId);
+    const priorityIndex = modelPriorities.indexOf(modelConfig.modelId);
+    const priority = priorityIndex === -1 ? 9999 : priorityIndex;
+
+    // Check if model is in allowed list (if allowedModels is specified)
+    const isInAllowedList = allowedModels.length === 0 || allowedModels.includes(modelConfig.modelId);
+
+    // A model requires upgrade if:
+    // 1. It's NOT in the allowed list, OR
+    // 2. It's selectable, not enabled, AND we're at/over the limit
+    let requiresUpgrade = false;
+
+    if (!isInAllowedList) {
+      requiresUpgrade = true;
+    } else if (modelConfig.isSelectable && !isCurrentlyEnabled && enabledSelectableCount >= modelsLimit) {
+      requiresUpgrade = true;
+    }
+
+    // Get suggested upgrade model info if exists
+    let suggestedUpgradeModel = null;
+    if (modelConfig.suggestedUpgrade) {
+      const upgradeConfig = modelsConfig.find(m => m.modelId === modelConfig.suggestedUpgrade);
+      if (upgradeConfig) {
+        suggestedUpgradeModel = {
+          modelId: upgradeConfig.modelId,
+          name: upgradeConfig.name
+        };
+      }
+    }
+
     return {
-      ...model,
-      priority: priorityIndex === -1 ? 9999 : priorityIndex
-    };
-  }).sort((a, b) => a.priority - b.priority);
-
-  // Mark models based on limit and allowed list
-  return sortedModels.map((model, index) => {
-    const withinLimit = index < modelsLimit;
-    const isAllowed = allowedModels.length === 0 || allowedModels.includes(model.modelId);
-    const requiresUpgrade = !withinLimit || !isAllowed;
-
-    return {
-      modelId: model.modelId,
-      name: model.name,
-      provider: model.provider,
+      modelId: modelConfig.modelId,
+      name: modelConfig.name,
+      provider: modelConfig.provider,
+      description: modelConfig.description,
       isAllowed: !requiresUpgrade,
       requiresUpgrade,
-      priority: model.priority,
-      _id: model._id
+      priority,
+      isCurrentlyEnabled,
+      isSelectable: modelConfig.isSelectable,
+      allowedInBatchJobs: modelConfig.allowedInBatchJobs,
+      suggestedUpgrade: suggestedUpgradeModel
     };
   });
 }
@@ -181,7 +255,6 @@ async function getEntitlements(workspaceId) {
   const paymentExpired = isPaymentExpired(billingProfile);
 
   // If payment expired, treat as free tier
-  const effectivePlan = paymentExpired ? 'free' : billingProfile.currentPlan;
   const effectiveProfile = paymentExpired ? {
     ...billingProfile,
     currentPlan: 'free',

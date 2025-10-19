@@ -18,14 +18,15 @@ const PLAN_CONFIGS = {
     brandsLimit: 1,
     promptsLimit: 4,
     modelsLimit: 1,
+    modelsSelectable: 0, // No selection - fixed model
     promptCharacterLimit: 25,
     dataRetentionDays: 30,
     jobFrequency: 'monthly',
+    costBudgetMonthly: 0,
 
-    // Allowed models for this tier
+    // Allowed models for this tier (Fixed: GPT-4o-mini only)
     allowedModels: [
-      'gpt-4o',
-      'claude-3-5-sonnet-20241022'
+      'gpt-4o-mini-2024-07-18'
     ],
 
     // Plan metadata
@@ -33,7 +34,7 @@ const PLAN_CONFIGS = {
     features: [
       '1 brand',
       '4 prompts per month',
-      '1 AI model',
+      '1 AI model (GPT-4o-mini - fixed)',
       'Monthly data refresh',
       '30-day data retention'
     ]
@@ -51,17 +52,24 @@ const PLAN_CONFIGS = {
     brandsLimit: 4,
     promptsLimit: 10,
     modelsLimit: 3,
+    modelsSelectable: 3, // Must select exactly 3
     promptCharacterLimit: 25,
     dataRetentionDays: 90,
     jobFrequency: 'daily',
+    costBudgetMonthly: 5.00,
 
-    // Allowed models for this tier
+    // Selection rules
+    maxProfessionalModels: 1,
+    selectionRule: 'Maximum 1 Professional tier model',
+
+    // Allowed models for this tier (Basic + Professional tier models)
     allowedModels: [
-      'gpt-4o',
-      'gpt-4-turbo',
-      'claude-3-5-sonnet-20241022',
+      'gpt-4o-mini-2024-07-18',
       'claude-3-5-haiku-20241022',
-      'gemini-2.0-flash-exp'
+      'gemini-2.5-flash',
+      'gpt-4o-2024-08-06',
+      'claude-3-5-sonnet-20241022',
+      'gemini-2.5-pro'
     ],
 
     // Plan metadata
@@ -69,7 +77,8 @@ const PLAN_CONFIGS = {
     features: [
       '4 brands',
       '10 prompts per month',
-      '3 AI models',
+      'Select 3 AI models',
+      'Max 1 Professional tier model',
       'Daily data refresh',
       '90-day data retention',
       'Priority support'
@@ -88,21 +97,37 @@ const PLAN_CONFIGS = {
     brandsLimit: 10,
     promptsLimit: 20,
     modelsLimit: 6,
+    modelsSelectable: 6, // Must select exactly 6
     promptCharacterLimit: 25,
     dataRetentionDays: 180,
     jobFrequency: 'daily',
+    costBudgetMonthly: 60.00,
 
-    // Allowed models for this tier
+    // Selection rules
+    maxExpensivePremium: 1,
+    maxCheapPremium: 2,
+    selectionRule: 'Max 1 expensive Premium (GPT-4.1 OR Claude Opus) OR max 2 cheap Premium (Haiku 4.5 + Flash-Lite)',
+    expensivePremiumModels: [
+      'gpt-4.1-2025-04-14',
+      'claude-3-opus-20240229'
+    ],
+    cheapPremiumModels: [
+      'claude-haiku-4-5',
+      'gemini-2.5-flash-lite'
+    ],
+
+    // Allowed models for this tier (Basic + Professional + Select Premium models)
     allowedModels: [
-      'gpt-4o',
-      'gpt-4-turbo',
-      'gpt-4',
-      'claude-3-5-sonnet-20241022',
+      'gpt-4o-mini-2024-07-18',
       'claude-3-5-haiku-20241022',
+      'gemini-2.5-flash',
+      'gpt-4o-2024-08-06',
+      'claude-3-5-sonnet-20241022',
+      'gemini-2.5-pro',
+      'gpt-4.1-2025-04-14',
+      'claude-haiku-4-5',
       'claude-3-opus-20240229',
-      'gemini-2.0-flash-exp',
-      'gemini-1.5-pro',
-      'gemini-1.5-flash'
+      'gemini-2.5-flash-lite'
     ],
 
     // Plan metadata
@@ -110,7 +135,8 @@ const PLAN_CONFIGS = {
     features: [
       '10 brands',
       '20 prompts per month',
-      '6 AI models',
+      'Select 6 AI models',
+      'Includes Premium tier models',
       'Daily data refresh',
       '180-day data retention',
       'Priority support',
@@ -130,19 +156,39 @@ const PLAN_CONFIGS = {
     brandsLimit: 999999,  // Unlimited
     promptsLimit: 999999,  // Unlimited
     modelsLimit: 999999,   // Unlimited
+    modelsSelectable: 999999, // Unlimited selection
     promptCharacterLimit: 25,  // Default, can be customized
     dataRetentionDays: 365,
     jobFrequency: 'daily',
+    costBudgetMonthly: -1, // No limit
 
-    // All models allowed by default
-    allowedModels: [], // Empty array means all models allowed
+    // Selection rules
+    selectionRule: 'No limits',
+
+    // All models allowed including enterprise-only
+    allowedModels: [
+      'gpt-4o-mini-2024-07-18',
+      'claude-3-5-haiku-20241022',
+      'gemini-2.5-flash',
+      'gpt-4o-2024-08-06',
+      'claude-3-5-sonnet-20241022',
+      'gemini-2.5-pro',
+      'gpt-4.1-2025-04-14',
+      'claude-haiku-4-5',
+      'claude-3-opus-20240229',
+      'gemini-2.5-flash-lite',
+      'gpt-4-turbo-2024-04-09',
+      'gpt-4.1-mini-2025-04-14',
+      'gemini-2.0-flash'
+    ],
 
     // Plan metadata
     description: 'Custom solutions for large organizations',
     features: [
       'Unlimited brands',
       'Unlimited prompts',
-      'All AI models',
+      'All AI models available',
+      'Unlimited model selection',
       'Custom data refresh frequency',
       'Custom data retention',
       'Dedicated support',

@@ -229,22 +229,29 @@ function stripeProductToPlan(product, prices = []) {
   }
 
   // Build features list from description and metadata
-  const features = [];
-  if (meta.brands_limit) {
-    const limit = brandsLimit === -1 ? 'Unlimited' : brandsLimit;
-    features.push(`${limit} brand${brandsLimit !== 1 ? 's' : ''} monitored`);
-  }
-  if (meta.prompts_limit) {
-    const limit = promptsLimit === -1 ? 'Unlimited' : promptsLimit;
-    features.push(`${limit} search phrase${promptsLimit !== 1 ? 's' : ''}`);
-  }
-  if (meta.models_limit) {
-    const limit = modelsLimit === -1 ? 'All' : modelsLimit;
-    features.push(`${limit} AI model${modelsLimit !== 1 ? 's' : ''}`);
-  }
-  if (meta.batch_frequency) {
-    const freq = meta.batch_frequency.charAt(0).toUpperCase() + meta.batch_frequency.slice(1);
-    features.push(`${freq} monitoring`);
+  let features = [];
+
+  // Check if custom features are defined
+  if (meta.custom_features) {
+    features = meta.custom_features.split(',').map(f => f.trim());
+  } else {
+    // Fallback to auto-generated features
+    if (meta.brands_limit) {
+      const limit = brandsLimit === -1 ? 'Unlimited' : brandsLimit;
+      features.push(`${limit} brand${brandsLimit !== 1 ? 's' : ''} monitored`);
+    }
+    if (meta.prompts_limit) {
+      const limit = promptsLimit === -1 ? 'Unlimited' : promptsLimit;
+      features.push(`${limit} search phrase${promptsLimit !== 1 ? 's' : ''}`);
+    }
+    if (meta.models_limit) {
+      const limit = modelsLimit === -1 ? 'All' : modelsLimit;
+      features.push(`${limit} AI model${modelsLimit !== 1 ? 's' : ''}`);
+    }
+    if (meta.batch_frequency) {
+      const freq = meta.batch_frequency.charAt(0).toUpperCase() + meta.batch_frequency.slice(1);
+      features.push(`${freq} monitoring`);
+    }
   }
 
   return {
