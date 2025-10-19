@@ -58,15 +58,18 @@ async function scheduleJobMutation(parent, args, { user }) {
                 const repeatInterval = getRepeatInterval(entitlements.jobFrequency);
 
                 if (jobArgs.schedule && jobArgs.schedule.toLowerCase() === 'now') {
+                  // Run the job immediately
                   job = await agenda.now(jobArgs.name, jobArgs.data);
-
-                  // For promptModelTester jobs run with "now", also set up recurring schedule
-                  if (isPromptModelTester && repeatInterval) {
-                    await job.repeatEvery(repeatInterval, { skipImmediate: true });
-                    console.log(`Set up recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
-                  }
-
                   await job.save();
+
+                  // For promptModelTester jobs, also create a separate recurring job
+                  if (isPromptModelTester && repeatInterval) {
+                    console.log(`Creating recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
+                    const recurringJob = await agenda.create(jobArgs.name, jobArgs.data);
+                    await recurringJob.repeatEvery(repeatInterval, { skipImmediate: true });
+                    await recurringJob.save();
+                    console.log(`Set up recurring job with interval: ${repeatInterval}`);
+                  }
                 } else if (jobArgs.schedule) {
                   job = await agenda.schedule(jobArgs.schedule, jobArgs.name, jobArgs.data);
 
