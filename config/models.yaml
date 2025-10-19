@@ -16,6 +16,7 @@ models:
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
+    processByBatch: true
     suggestedUpgrade: null
 
   - modelId: claude-3-5-haiku-20241022
