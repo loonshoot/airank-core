@@ -61,6 +61,7 @@ mongoose.connect(mongoUri)
     const { typeDefs: analyticsTypeDefs, resolvers: analyticsResolvers } = require('./queries/analytics');
     const { typeDefs: billingProfileTypeDefs, resolvers: billingProfileResolvers } = require('./queries/billingProfile');
     const { typeDefs: billingPlansTypeDefs, resolvers: billingPlansResolvers } = require('./queries/billingPlans');
+    const { typeDefs: entitlementsTypeDefs, resolvers: entitlementsResolvers } = require('./queries/entitlements');
     const { scheduleJobMutation } = require('./mutations/scheduleJob');
     const { createSource } = require('./mutations/createSource'); 
     const { updateSource } = require('./mutations/updateSource'); 
@@ -103,6 +104,7 @@ mongoose.connect(mongoUri)
         analyticsTypeDefs,
         billingProfileTypeDefs,
         billingPlansTypeDefs,
+        entitlementsTypeDefs,
         gql`
           type Query {
             workspace(workspaceId: String, workspaceSlug: String): Workspace
@@ -424,6 +426,9 @@ mongoose.connect(mongoUri)
             },
             billingPlans: async (parent, args, context) => {
                 return billingPlansResolvers.billingPlans(parent, args, context);
+            },
+            entitlements: async (parent, args, context) => {
+                return entitlementsResolvers.entitlements(parent, args, context);
             }
         },
         Mutation: {
@@ -576,6 +581,9 @@ mongoose.connect(mongoUri)
           },
           savePaymentMethod: async (parent, args, context) => {
             return savePaymentMethodResolvers.savePaymentMethod(parent, args, context);
+          },
+          refreshEntitlements: async (parent, args, context) => {
+            return entitlementsResolvers.refreshEntitlements(parent, args, context);
           }
         }
     };

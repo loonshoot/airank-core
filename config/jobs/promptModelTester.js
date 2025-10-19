@@ -149,7 +149,7 @@ Include ALL brands in the array. Return JSON only:`;
 // Main job function
 module.exports = async function promptModelTester(job, done) {
     const { workspaceId } = job.attrs.data;
-    const redisClient = job.attrs.redisClient;
+    const redisClient = job.redisClient; // Fixed: Redis client is attached directly to job, not job.attrs
     
     if (!workspaceId) {
         return done(new Error('workspaceId is required'));

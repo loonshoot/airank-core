@@ -64,6 +64,7 @@ const resolvers = {
         brandsUsed: 0,
         promptsLimit: 4,
         promptsUsed: 0,
+        promptCharacterLimit: 150,
         promptsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         modelsLimit: 1,
         dataRetentionDays: 30,

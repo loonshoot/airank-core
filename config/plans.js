@@ -19,7 +19,7 @@ const PLAN_CONFIGS = {
     promptsLimit: 4,
     modelsLimit: 1,
     modelsSelectable: 0, // No selection - fixed model
-    promptCharacterLimit: 25,
+    promptCharacterLimit: 150,
     dataRetentionDays: 30,
     jobFrequency: 'monthly',
     costBudgetMonthly: 0,
@@ -53,7 +53,7 @@ const PLAN_CONFIGS = {
     promptsLimit: 10,
     modelsLimit: 3,
     modelsSelectable: 3, // Must select exactly 3
-    promptCharacterLimit: 25,
+    promptCharacterLimit: 150,
     dataRetentionDays: 90,
     jobFrequency: 'daily',
     costBudgetMonthly: 5.00,
@@ -98,7 +98,7 @@ const PLAN_CONFIGS = {
     promptsLimit: 20,
     modelsLimit: 6,
     modelsSelectable: 6, // Must select exactly 6
-    promptCharacterLimit: 25,
+    promptCharacterLimit: 150,
     dataRetentionDays: 180,
     jobFrequency: 'daily',
     costBudgetMonthly: 60.00,
@@ -157,7 +157,7 @@ const PLAN_CONFIGS = {
     promptsLimit: 999999,  // Unlimited
     modelsLimit: 999999,   // Unlimited
     modelsSelectable: 999999, // Unlimited selection
-    promptCharacterLimit: 25,  // Default, can be customized
+    promptCharacterLimit: 150,  // Default, can be customized
     dataRetentionDays: 365,
     jobFrequency: 'daily',
     costBudgetMonthly: -1, // No limit

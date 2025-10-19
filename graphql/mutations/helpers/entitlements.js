@@ -96,7 +96,7 @@ async function getEntitlements(workspaceId) {
     brandsLimit: 1,
     promptsLimit: 4,
     modelsLimit: 1,
-    promptCharacterLimit: 25,
+    promptCharacterLimit: 150,
     jobFrequency: 'monthly',
   } : billingProfile;
 

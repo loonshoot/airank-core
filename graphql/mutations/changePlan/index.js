@@ -37,6 +37,7 @@ if (stripeKey && stripeKey !== 'sk_test' && stripeKey.startsWith('sk_')) {
               plan_id: 'free',
               brands_limit: '1',
               prompts_limit: '4',
+              prompt_character_limit: '150',
               models_limit: '1',
               data_retention_days: '30',
               allowed_models: 'gpt-4o-mini',
@@ -50,6 +51,7 @@ if (stripeKey && stripeKey !== 'sk_test' && stripeKey.startsWith('sk_')) {
               plan_id: 'small',
               brands_limit: '4',
               prompts_limit: '10',
+              prompt_character_limit: '150',
               models_limit: '3',
               data_retention_days: '90',
               allowed_models: 'gpt-4o-mini,gpt-4o,claude-3-5-sonnet',
@@ -63,6 +65,7 @@ if (stripeKey && stripeKey !== 'sk_test' && stripeKey.startsWith('sk_')) {
               plan_id: 'medium',
               brands_limit: '10',
               prompts_limit: '20',
+              prompt_character_limit: '150',
               models_limit: '6',
               data_retention_days: '180',
               allowed_models: 'gpt-4o-mini,gpt-4o,claude-3-5-sonnet,claude-3-opus,gemini-pro,llama-3',
@@ -76,6 +79,7 @@ if (stripeKey && stripeKey !== 'sk_test' && stripeKey.startsWith('sk_')) {
               plan_id: 'enterprise',
               brands_limit: 'unlimited',
               prompts_limit: 'unlimited',
+              prompt_character_limit: '150',
               models_limit: 'unlimited',
               data_retention_days: 'unlimited',
               allowed_models: 'all',
@@ -182,6 +186,7 @@ const resolvers = {
     const promptsLimit = meta.prompts_limit === 'unlimited' ? 999999 : parseInt(meta.prompts_limit);
     const modelsLimit = meta.models_limit === 'unlimited' ? 999999 : parseInt(meta.models_limit);
     const dataRetentionDays = meta.data_retention_days === 'unlimited' ? 999999 : parseInt(meta.data_retention_days);
+    const promptCharacterLimit = meta.prompt_character_limit ? parseInt(meta.prompt_character_limit) : 150;
 
     // Update billing profile with new plan details
     await db.collection('billingprofiles').updateOne(
@@ -192,6 +197,7 @@ const resolvers = {
           brandsLimit,
           promptsLimit,
           modelsLimit,
+          promptCharacterLimit,
           dataRetentionDays,
           updatedAt: new Date()
         }

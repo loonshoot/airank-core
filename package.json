@@ -26,6 +26,7 @@
     "apollo-server-express": "^3.13.0",
     "http-proxy": "^1.18.1",
     "jose": "^6.0.11",
+    "js-yaml": "^4.1.0",
     "mongoose": "^8.13.2",
     "redis": "^4.6.7",
     "sanitize-html": "^2.17.0",

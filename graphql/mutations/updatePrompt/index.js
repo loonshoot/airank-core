@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { Member } = require('../../queries/member');
+const { enforceCharacterLimit, getEntitlements } = require('../helpers/entitlements');
 
 // Define the Prompt Model factory for workspace-specific connections
 const Prompt = (workspaceId) => {
@@ -35,13 +36,21 @@ async function updatePrompt(parent, args, { user }) {
       throw new Error('User not authorized to update prompts');
     }
 
+    // Enforce character limit on the phrase
+    const entitlements = await getEntitlements(workspaceId || workspaceSlug);
+    const enforcedPhrase = enforceCharacterLimit(phrase, entitlements.promptCharacterLimit);
+
+    if (enforcedPhrase.isTruncated) {
+      console.warn(`Prompt truncated from ${enforcedPhrase.originalLength} to ${enforcedPhrase.limit} characters`);
+    }
+
     // Get the workspace-specific model
     const PromptModel = Prompt(workspaceId || workspaceSlug);
 
-    // Update the prompt
+    // Update the prompt with enforced character limit
     const prompt = await PromptModel.findByIdAndUpdate(
       id,
-      { phrase, updatedAt: new Date() },
+      { phrase: enforcedPhrase.truncated, updatedAt: new Date() },
       { new: true }
     );
 

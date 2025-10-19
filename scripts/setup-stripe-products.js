@@ -19,6 +19,7 @@ const plans = [
       plan_id: 'free',
       brands_limit: '1',
       prompts_limit: '4',
+      prompt_character_limit: '150',
       models_limit: '1',
       models_selectable: '0', // No selection, fixed model
       batch_frequency: 'monthly',
@@ -38,6 +39,7 @@ const plans = [
       plan_id: 'small',
       brands_limit: '4',
       prompts_limit: '10',
+      prompt_character_limit: '150',
       models_limit: '3',
       models_selectable: '3', // Must select exactly 3
       batch_frequency: 'daily',
@@ -69,6 +71,7 @@ const plans = [
       plan_id: 'medium',
       brands_limit: '10',
       prompts_limit: '20',
+      prompt_character_limit: '150',
       models_limit: '6',
       models_selectable: '6', // Must select exactly 6
       batch_frequency: 'daily',
@@ -104,6 +107,7 @@ const plans = [
       plan_id: 'enterprise',
       brands_limit: '-1',
       prompts_limit: '-1',
+      prompt_character_limit: '150',
       models_limit: '-1',
       models_selectable: '-1', // Unlimited
       batch_frequency: 'custom',

@@ -200,13 +200,22 @@ async function createWorkspace(parent, args, { user }) {
 
     // Create initial billing config in workspace database
     const configsCollection = workspaceDb.collection('configs');
-    await configsCollection.insertOne({
-      _id: new mongoose.Types.ObjectId(),
-      configType: 'billing',
-      data: { advancedBilling: false },
-      method: 'automatic',
-      updatedAt: new Date()
-    });
+    await configsCollection.insertMany([
+      {
+        _id: new mongoose.Types.ObjectId(),
+        configType: 'billing',
+        data: { advancedBilling: false },
+        method: 'automatic',
+        updatedAt: new Date()
+      },
+      {
+        _id: new mongoose.Types.ObjectId(),
+        configType: 'setup',
+        data: { inSetupMode: true },
+        method: 'automatic',
+        updatedAt: new Date()
+      }
+    ]);
 
     // Close connections
     await Promise.all([
