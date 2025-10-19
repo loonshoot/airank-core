@@ -101,6 +101,7 @@ async function getEntitlements(workspaceId) {
   } : billingProfile;
 
   // Count actual brands in workspace (live count)
+  // Only count competitor brands (isOwnBrand: false or not set)
   let actualBrandsUsed = 0;
   let actualPromptsUsed = 0;
 
@@ -109,7 +110,11 @@ async function getEntitlements(workspaceId) {
     const datalake = mongoose.createConnection(dataLakeUri);
     await datalake.asPromise();
 
-    actualBrandsUsed = await datalake.collection('brands').countDocuments({ workspaceId });
+    // Only count competitor brands - own brand doesn't count toward limit
+    actualBrandsUsed = await datalake.collection('brands').countDocuments({
+      workspaceId,
+      isOwnBrand: { $ne: true }
+    });
     actualPromptsUsed = await datalake.collection('prompts').countDocuments({ workspaceId });
 
     await datalake.close();

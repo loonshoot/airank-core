@@ -265,9 +265,33 @@ async function getEntitlements(workspaceId) {
     jobFrequency: 'monthly',
   } : billingProfile;
 
-  // Calculate remaining limits
-  const brandsRemaining = Math.max(0, effectiveProfile.brandsLimit - effectiveProfile.brandsUsed);
-  const promptsRemaining = Math.max(0, effectiveProfile.promptsLimit - effectiveProfile.promptsUsed);
+  // Count actual brands and prompts (live count)
+  // Only count competitor brands - own brand doesn't count toward limit
+  let actualBrandsUsed = 0;
+  let actualPromptsUsed = 0;
+
+  try {
+    const workspaceDbUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
+    const workspaceDb = mongoose.createConnection(workspaceDbUri);
+    await workspaceDb.asPromise();
+
+    // Only count competitor brands - own brand doesn't count toward limit
+    actualBrandsUsed = await workspaceDb.collection('brands').countDocuments({
+      isOwnBrand: { $ne: true }
+    });
+    actualPromptsUsed = await workspaceDb.collection('prompts').countDocuments({});
+
+    await workspaceDb.close();
+  } catch (error) {
+    console.error('Error counting workspace resources:', error);
+    // Fall back to cached counts if live count fails
+    actualBrandsUsed = effectiveProfile.brandsUsed || 0;
+    actualPromptsUsed = effectiveProfile.promptsUsed || 0;
+  }
+
+  // Calculate remaining limits using live counts
+  const brandsRemaining = Math.max(0, effectiveProfile.brandsLimit - actualBrandsUsed);
+  const promptsRemaining = Math.max(0, effectiveProfile.promptsLimit - actualPromptsUsed);
 
   // Get workspace models to enforce limits
   const models = await getWorkspaceModels(workspaceId);
@@ -281,13 +305,13 @@ async function getEntitlements(workspaceId) {
     workspaceId,
     billingProfile: effectiveProfile,
 
-    // Limits
+    // Limits - use live counts
     brandsLimit: effectiveProfile.brandsLimit,
-    brandsUsed: effectiveProfile.brandsUsed,
+    brandsUsed: actualBrandsUsed,
     brandsRemaining,
 
     promptsLimit: effectiveProfile.promptsLimit,
-    promptsUsed: effectiveProfile.promptsUsed,
+    promptsUsed: actualPromptsUsed,
     promptsRemaining,
     promptsResetDate: effectiveProfile.promptsResetDate,
     promptCharacterLimit: effectiveProfile.promptCharacterLimit,

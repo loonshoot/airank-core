@@ -1,7 +1,7 @@
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
 const { BillingProfile, BillingProfileMember } = require('../../queries/billingProfile');
-const { updateJobSchedules } = require('./helpers/updateJobSchedules');
+const { updateJobSchedules } = require('../helpers/updateJobSchedules');
 
 // Initialize Stripe - use real key if available, otherwise mock
 let stripe;
