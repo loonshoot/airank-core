@@ -1,6 +1,23 @@
 const Agenda = require('agenda');
 require('dotenv').config();
 const { Member } = require('../../queries/member');
+const { getEntitlements } = require('../helpers/entitlements');
+
+// Convert jobFrequency to Agenda repeat interval
+function getRepeatInterval(jobFrequency) {
+  switch (jobFrequency) {
+    case 'daily':
+      return '1 day';
+    case 'weekly':
+      return '1 week';
+    case 'monthly':
+      return '1 month';
+    case 'custom':
+      return null; // Don't auto-schedule for custom plans
+    default:
+      return '1 month';
+  }
+}
 
 // Async function to schedule a job with Agenda
 async function scheduleJobMutation(parent, args, { user }) {
@@ -11,9 +28,18 @@ async function scheduleJobMutation(parent, args, { user }) {
       permissions: "mutation:scheduleJobs"
     });
     if (member) {
-      return new Promise((resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
         const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
         const scheduledJobs = [];
+
+        // Get entitlements to determine job frequency
+        let entitlements;
+        try {
+          entitlements = await getEntitlements(args.workspaceId);
+        } catch (err) {
+          console.error('Error getting entitlements:', err);
+          entitlements = { jobFrequency: 'monthly' }; // Default fallback
+        }
 
         const agenda = new Agenda({ db: { address: mongoUri, collection: 'jobs' } });
 
@@ -28,18 +54,35 @@ async function scheduleJobMutation(parent, args, { user }) {
                 jobArgs.data.workspaceId = args.workspaceId;
 
                 let job;
+                const isPromptModelTester = jobArgs.name === 'promptModelTester';
+                const repeatInterval = getRepeatInterval(entitlements.jobFrequency);
+
                 if (jobArgs.schedule && jobArgs.schedule.toLowerCase() === 'now') {
                   job = await agenda.now(jobArgs.name, jobArgs.data);
-                  await job.save(); // Save the job after setting repeatEvery
+
+                  // For promptModelTester jobs run with "now", also set up recurring schedule
+                  if (isPromptModelTester && repeatInterval) {
+                    await job.repeatEvery(repeatInterval, { skipImmediate: true });
+                    console.log(`Set up recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
+                  }
+
+                  await job.save();
                 } else if (jobArgs.schedule) {
                   job = await agenda.schedule(jobArgs.schedule, jobArgs.name, jobArgs.data);
-                  await job.save(); // Save the job after setting repeatEvery
+
+                  // For promptModelTester jobs, also set up recurring schedule
+                  if (isPromptModelTester && repeatInterval) {
+                    await job.repeatEvery(repeatInterval, { skipImmediate: true });
+                    console.log(`Set up recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
+                  }
+
+                  await job.save();
                 } else if (jobArgs.repeatEvery) {
                   job = await agenda.create(jobArgs.name, jobArgs.data);
-                  await job.repeatEvery(jobArgs.repeatEvery, { 
-                    skipImmediate: jobArgs.skipImmediate || false 
-                  }); 
-                  await job.save(); // Save the job after setting repeatEvery
+                  await job.repeatEvery(jobArgs.repeatEvery, {
+                    skipImmediate: jobArgs.skipImmediate || false
+                  });
+                  await job.save();
                 } else {
                   throw new Error('Missing required fields: schedule or repeatEvery');
                 }

@@ -1,6 +1,7 @@
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
 const { BillingProfile, BillingProfileMember } = require('../../queries/billingProfile');
+const { updateJobSchedules } = require('./helpers/updateJobSchedules');
 
 // Initialize Stripe - use real key if available, otherwise mock
 let stripe;
@@ -187,6 +188,7 @@ const resolvers = {
     const modelsLimit = meta.models_limit === 'unlimited' ? 999999 : parseInt(meta.models_limit);
     const dataRetentionDays = meta.data_retention_days === 'unlimited' ? 999999 : parseInt(meta.data_retention_days);
     const promptCharacterLimit = meta.prompt_character_limit ? parseInt(meta.prompt_character_limit) : 150;
+    const jobFrequency = meta.batch_frequency || 'monthly';
 
     // Update billing profile with new plan details
     await db.collection('billingprofiles').updateOne(
@@ -198,11 +200,30 @@ const resolvers = {
           promptsLimit,
           modelsLimit,
           promptCharacterLimit,
+          jobFrequency,
           dataRetentionDays,
           updatedAt: new Date()
         }
       }
     );
+
+    // Find all workspaces using this billing profile and update their job schedules
+    const workspaces = await db.collection('workspaces').find({
+      billingProfileId: billingProfileId
+    }).toArray();
+
+    console.log(`Found ${workspaces.length} workspace(s) using billing profile ${billingProfileId}`);
+
+    // Update job schedules for each workspace
+    for (const workspace of workspaces) {
+      try {
+        const result = await updateJobSchedules(workspace._id, jobFrequency);
+        console.log(`Updated ${result.updated} job(s) for workspace ${workspace._id} to ${result.newFrequency}`);
+      } catch (error) {
+        console.error(`Error updating job schedules for workspace ${workspace._id}:`, error);
+        // Don't fail the whole plan change if job update fails
+      }
+    }
 
     // Return updated billing profile
     const updatedProfile = await db.collection('billingprofiles').findOne({ _id: billingProfileId });
