@@ -12,14 +12,32 @@ RUN ls -la /
 # Copy and install config package first
 COPY config /app/config/
 WORKDIR /app/config
-RUN npm install
-RUN npm pack
+RUN echo "===============================================" && \
+    echo "Installing config package dependencies..." && \
+    echo "Working directory: $(pwd)" && \
+    echo "Package.json contents:" && \
+    cat package.json && \
+    echo "===============================================" && \
+    npm install --verbose --no-audit --no-fund --loglevel=verbose && \
+    echo "Config package installed successfully" && \
+    npm pack && \
+    echo "Config package packed successfully"
 
 # Install batcher service
 WORKDIR /app
 COPY batcher/package*.json ./
-RUN npm install
-RUN npm install /app/config/*.tgz
+RUN echo "===============================================" && \
+    echo "Installing batcher service dependencies..." && \
+    echo "Working directory: $(pwd)" && \
+    echo "Package.json contents:" && \
+    cat package.json && \
+    echo "===============================================" && \
+    npm install --verbose --no-audit --no-fund --loglevel=verbose && \
+    echo "Batcher dependencies installed successfully" && \
+    echo "Installing local config package..." && \
+    ls -la /app/config/*.tgz && \
+    npm install /app/config/*.tgz --verbose --loglevel=verbose && \
+    echo "Local config package installed successfully"
 
 COPY batcher/ .
 
