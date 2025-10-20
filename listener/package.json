@@ -1,0 +1,19 @@
+{
+  "name": "airank-listener",
+  "version": "1.0.0",
+  "description": "MongoDB change stream listener for AIRank batch processing",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "mongodb": "^6.0.0",
+    "mongoose": "^8.0.0",
+    "agenda": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
