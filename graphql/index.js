@@ -642,9 +642,104 @@ mongoose.connect(mongoUri)
     app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, do-connecting-ip'); 
+      res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, do-connecting-ip');
       next();
     });
+
+    // Batch processing webhook (before authentication middleware)
+    app.use(express.json());
+    app.post('/webhooks/batch/:workspaceId', async (req, res) => {
+      try {
+        const { workspaceId } = req.params;
+        const pubsubMessage = req.body;
+
+        console.log(`📨 Batch webhook received for workspace ${workspaceId}`);
+
+        // Verify Pub/Sub message format
+        if (!pubsubMessage || !pubsubMessage.message) {
+          console.error('Invalid Pub/Sub message format');
+          return res.status(400).send('Invalid message format');
+        }
+
+        // Decode the Pub/Sub message data
+        const messageData = JSON.parse(Buffer.from(pubsubMessage.message.data, 'base64').toString());
+
+        console.log('📦 GCS notification:', messageData);
+
+        // Extract file information from GCS notification
+        const { name: fileName, bucket } = messageData;
+
+        if (!fileName || !bucket) {
+          console.error('Missing file name or bucket in notification');
+          return res.status(400).send('Invalid notification data');
+        }
+
+        // Only process output files (not input files)
+        if (!fileName.includes('/output/')) {
+          console.log('⚠️ Skipping non-output file:', fileName);
+          return res.status(200).send('OK');
+        }
+
+        // Import batch helpers
+        const { downloadBatchResults } = require('./mutations/helpers/batch');
+
+        // Connect to workspace database
+        const workspaceUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
+        const workspaceConn = mongoose.createConnection(workspaceUri);
+        await workspaceConn.asPromise();
+        const workspaceDb = workspaceConn.db;
+
+        // Find the batch document by GCS output prefix
+        const gcsPrefix = `gs://${bucket}/${fileName.split('/').slice(0, -1).join('/')}/`;
+
+        const batch = await workspaceDb.collection('batches').findOne({
+          outputGcsPrefix: gcsPrefix,
+          status: { $in: ['submitted', 'processing'] }
+        });
+
+        if (!batch) {
+          // Try to find by checking if the prefix matches
+          const batches = await workspaceDb.collection('batches').find({
+            status: { $in: ['submitted', 'processing'] }
+          }).toArray();
+
+          let matchedBatch = null;
+          for (const b of batches) {
+            if (b.outputGcsPrefix && gcsPrefix.startsWith(b.outputGcsPrefix)) {
+              matchedBatch = b;
+              break;
+            }
+          }
+
+          if (!matchedBatch) {
+            console.log(`⚠️ No matching batch found for ${gcsPrefix}`);
+            await workspaceConn.close();
+            return res.status(200).send('OK');
+          }
+        }
+
+        console.log(`✓ Found batch: ${batch.batchId} (${batch.provider})`);
+
+        // Download and process results based on provider
+        if (batch.provider === 'vertex') {
+          const { downloadVertexBatchResults } = require('./mutations/helpers/batch');
+          await downloadVertexBatchResults(batch.outputGcsPrefix, workspaceDb, batch.batchId);
+        } else if (batch.provider === 'openai') {
+          const { downloadOpenAIBatchResults } = require('./mutations/helpers/batch');
+          await downloadOpenAIBatchResults(batch.outputFileId, workspaceDb, batch.batchId);
+        }
+
+        await workspaceConn.close();
+
+        console.log(`✅ Batch results downloaded and stored for ${batch.batchId}`);
+        res.status(200).send('OK');
+
+      } catch (error) {
+        console.error('💥 Batch webhook error:', error);
+        res.status(500).send('Internal Server Error');
+      }
+    });
+
     app.use(authenticateToken);
 
     // Create the Apollo Server

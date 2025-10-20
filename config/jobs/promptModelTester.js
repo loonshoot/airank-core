@@ -1,17 +1,36 @@
 const mongoose = require('mongoose');
 const ProviderFactory = require('../providers');
 const { getActiveModels } = require('../data/availableModels');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const path = require('path');
+const { submitBatch } = require('../../graphql/mutations/helpers/batch');
 
 // Import models from config
-const { 
-    Prompt, 
-    Brand, 
-    Model, 
-    PreviousModelResult 
+const {
+    Prompt,
+    Brand,
+    Model,
+    PreviousModelResult
 } = require('../data/models');
 
 // Import shared model configuration
 const { getModelConfig } = require('../data/availableModels');
+
+/**
+ * Get models configuration from YAML
+ */
+function getModelsConfig() {
+  try {
+    const configPath = path.join(__dirname, '../../config/models.yaml');
+    const fileContents = fs.readFileSync(configPath, 'utf8');
+    const config = yaml.load(fileContents);
+    return config.models || [];
+  } catch (error) {
+    console.error('Error loading models config:', error);
+    return [];
+  }
+}
 
 // Run prompt against a specific model using providers
 const runPromptAgainstModel = async (providers, prompt, model, workspaceId, WorkspacePreviousModelResult) => {
@@ -150,7 +169,7 @@ Include ALL brands in the array. Return JSON only:`;
 module.exports = async function promptModelTester(job, done) {
     const { workspaceId } = job.attrs.data;
     const redisClient = job.redisClient; // Fixed: Redis client is attached directly to job, not job.attrs
-    
+
     if (!workspaceId) {
         return done(new Error('workspaceId is required'));
     }
@@ -159,8 +178,12 @@ module.exports = async function promptModelTester(job, done) {
         return done(new Error('Redis client is required'));
     }
 
+    // Check if this is a recurring job (not immediate)
+    const isRecurringJob = job.attrs.repeatInterval && job.attrs.repeatInterval !== null;
+    console.log(`📋 Job type: ${isRecurringJob ? 'RECURRING (will use batch processing)' : 'IMMEDIATE (will use direct API calls)'}`);
+
     let workspaceConnection = null;
-    
+
     try {
         console.log(`🚀 Starting prompt-model testing job for workspace ${workspaceId}`);
         
@@ -250,7 +273,30 @@ module.exports = async function promptModelTester(job, done) {
             return done();
         }
 
-        console.log(`📊 Found ${prompts.length} prompts, ${brands.length} brands, and ${availableModels.length} available models`);
+        // Get models config to check processByBatch flag
+        const modelsConfig = getModelsConfig();
+
+        // If recurring job, separate models into batch and non-batch
+        let batchModels = [];
+        let directModels = [];
+
+        if (isRecurringJob) {
+            for (const model of availableModels) {
+                const modelConfig = modelsConfig.find(m => m.modelId === model.id);
+                if (modelConfig && modelConfig.processByBatch === true) {
+                    batchModels.push(model);
+                } else {
+                    directModels.push(model);
+                }
+            }
+
+            console.log(`📊 Found ${prompts.length} prompts, ${brands.length} brands`);
+            console.log(`📊 Models: ${batchModels.length} batch-enabled, ${directModels.length} direct processing`);
+        } else {
+            // Immediate job - process all models directly
+            directModels = availableModels;
+            console.log(`📊 Found ${prompts.length} prompts, ${brands.length} brands, and ${availableModels.length} available models`);
+        }
 
         // Organize brands for sentiment analysis
         const ownBrand = brands.find(b => b.isOwnBrand === true) || { name: 'Your Company' };
@@ -263,42 +309,96 @@ module.exports = async function promptModelTester(job, done) {
         }
 
         // Track progress
-        const totalOperations = prompts.length * availableModels.length;
+        const totalDirectOperations = prompts.length * directModels.length;
         let completedOperations = 0;
         let failedOperations = 0;
 
-        // Run each prompt against each model
-        const modelResults = [];
-        
-        for (const prompt of prompts) {
-            console.log(`📝 Processing prompt: "${prompt.phrase.substring(0, 100)}..."`);
-            
-            for (const model of availableModels) {
-                try {
-                    // Touch the job to extend lock before expensive model generation
-                    if (typeof job.touch === 'function') {
-                        job.touch();
+        // BATCH PROCESSING: Group and submit batch jobs
+        if (isRecurringJob && batchModels.length > 0) {
+            console.log('📦 Starting batch processing for batch-enabled models...');
+
+            // Group models by batch provider
+            // Both Claude and Gemini use Vertex AI for batch processing
+            const modelsByProvider = {
+                openai: batchModels.filter(m => m.provider === 'openai'),
+                vertex: batchModels.filter(m => m.provider === 'google') // All Google models via Vertex AI
+            };
+
+            // Get workspace database for batch storage
+            const workspaceDb = workspaceConnection.db;
+
+            // Submit batch jobs for each provider
+            for (const [provider, models] of Object.entries(modelsByProvider)) {
+                if (models.length === 0) continue;
+
+                console.log(`📦 Preparing ${provider} batch with ${models.length} models × ${prompts.length} prompts = ${models.length * prompts.length} requests`);
+
+                // Create batch requests
+                const batchRequests = [];
+
+                for (const prompt of prompts) {
+                    for (const model of models) {
+                        const customId = `${workspaceId}-${prompt._id}-${model.id}-${Date.now()}`;
+
+                        batchRequests.push({
+                            custom_id: customId,
+                            model: model.id,
+                            messages: [
+                                { role: 'user', content: prompt.phrase }
+                            ]
+                        });
                     }
-                    
-                    const result = await runPromptAgainstModel(providerFactory, prompt, model, workspaceId, WorkspacePreviousModelResult);
-                    modelResults.push(result);
-                    completedOperations++;
+                }
+
+                try {
+                    const batchResult = await submitBatch(provider, batchRequests, workspaceDb, workspaceId);
+                    console.log(`✓ Submitted ${provider} batch: ${batchResult.batchId} (${batchResult.requestCount} requests)`);
                 } catch (error) {
-                    console.error(`❌ Failed to run prompt "${prompt.phrase}" against model "${model.name}":`, error.message);
-                    failedOperations++;
+                    console.error(`✗ Failed to submit ${provider} batch:`, error.message);
                 }
-                
-                // Update job progress (if available)
-                if (typeof job.progress === 'function') {
-                    job.progress(Math.round((completedOperations + failedOperations) / totalOperations * 50)); // 50% for model testing
-                }
-                
-                // Small delay to be respectful to APIs
-                await new Promise(resolve => setTimeout(resolve, 100));
             }
+
+            console.log('📦 Batch submission completed. Results will be processed when batches complete.');
         }
 
-        console.log(`🎯 Model testing completed. ${completedOperations} successful, ${failedOperations} failed`);
+        // DIRECT PROCESSING: Run models that don't support batch processing
+        const modelResults = [];
+
+        if (directModels.length > 0) {
+            console.log(`🔄 Starting direct processing for ${directModels.length} models...`);
+
+            for (const prompt of prompts) {
+                console.log(`📝 Processing prompt: "${prompt.phrase.substring(0, 100)}..."`);
+
+                for (const model of directModels) {
+                    try {
+                        // Touch the job to extend lock before expensive model generation
+                        if (typeof job.touch === 'function') {
+                            job.touch();
+                        }
+
+                        const result = await runPromptAgainstModel(providerFactory, prompt, model, workspaceId, WorkspacePreviousModelResult);
+                        modelResults.push(result);
+                        completedOperations++;
+                    } catch (error) {
+                        console.error(`❌ Failed to run prompt "${prompt.phrase}" against model "${model.name}":`, error.message);
+                        failedOperations++;
+                    }
+
+                    // Update job progress (if available)
+                    if (typeof job.progress === 'function') {
+                        job.progress(Math.round((completedOperations + failedOperations) / totalDirectOperations * 50)); // 50% for model testing
+                    }
+
+                    // Small delay to be respectful to APIs
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+
+            console.log(`🎯 Direct model testing completed. ${completedOperations} successful, ${failedOperations} failed`);
+        } else {
+            console.log('⚠️ No models require direct processing (all are batch-enabled)');
+        }
 
         // Initialize sentiment analysis tracking variables
         let sentimentCompleted = 0;
@@ -334,10 +434,19 @@ module.exports = async function promptModelTester(job, done) {
 
         // Final summary
         const summary = {
+            jobType: isRecurringJob ? 'recurring' : 'immediate',
             totalPrompts: prompts.length,
             totalModels: availableModels.length,
-            totalOperations,
+            totalOperations: totalDirectOperations + (isRecurringJob ? (batchModels.length * prompts.length) : 0),
             availableProviders,
+            batchProcessing: isRecurringJob ? {
+                enabled: true,
+                batchModels: batchModels.length,
+                directModels: directModels.length,
+                batchedRequests: batchModels.length * prompts.length
+            } : {
+                enabled: false
+            },
             modelTestingResults: {
                 successful: completedOperations,
                 failed: failedOperations

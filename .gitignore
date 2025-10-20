@@ -2,3 +2,8 @@
 **/node_modules/
 .aider*
 .env
+
+# Ignore GCP service account keys (IMPORTANT - never commit these!)
+**/gcp-*.json
+**/*-key.json
+*.pem

@@ -1,256 +1,233 @@
-# Models Configuration
-# Central source of truth for all AI models supported by the application
-# This configuration controls which models are available, selectable, and allowed in batch jobs
-# Based on cost tiers: Basic, Professional, Premium
-
 models:
-  # BASIC TIER MODELS
-  # Cost per query: ~$0.11 - $0.23
-
   - modelId: gpt-4o-mini-2024-07-18
     name: GPT-4o Mini
     provider: openai
-    description: "Fast and efficient mini model for everyday tasks"
-    costTier: "Basic"
+    description: Fast and efficient mini model for everyday tasks
+    costTier: Basic
     costPerQueryUSD: 0.11
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     processByBatch: true
     suggestedUpgrade: null
-
   - modelId: claude-3-5-haiku-20241022
     name: Claude 3.5 Haiku
     provider: google
-    description: "Fast and cost-effective Claude model"
-    costTier: "Basic"
+    description: Fast and cost-effective Claude model
+    costTier: Basic
     costPerQueryUSD: 0.23
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
+    processByBatch: true
   - modelId: gemini-2.5-flash
     name: Gemini 2.5 Flash
     provider: google
-    description: "Fast and efficient Gemini model"
-    costTier: "Basic"
+    description: Fast and efficient Gemini model
+    costTier: Basic
     costPerQueryUSD: 0.11
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
-  # PROFESSIONAL TIER MODELS
-  # Cost per query: ~$4.64 - $13.84
-
+    processByBatch: true
   - modelId: gpt-4o-2024-08-06
     name: GPT-4o
     provider: openai
-    description: "Most capable GPT-4 model with multimodal capabilities"
-    costTier: "Professional"
+    description: Most capable GPT-4 model with multimodal capabilities
+    costTier: Professional
     costPerQueryUSD: 9.29
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
+    processByBatch: true
   - modelId: claude-3-5-sonnet-20241022
     name: Claude 3.5 Sonnet
     provider: google
-    description: "Balanced Claude model for most use cases"
-    costTier: "Professional"
+    description: Balanced Claude model for most use cases
+    costTier: Professional
     costPerQueryUSD: 13.84
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
+    processByBatch: true
   - modelId: gemini-2.5-pro
     name: Gemini 2.5 Pro
     provider: google
-    description: "Google's most capable model"
-    costTier: "Professional"
+    description: Google's most capable model
+    costTier: Professional
     costPerQueryUSD: 4.64
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
-  # PREMIUM TIER MODELS (MEDIUM PLAN)
-  # Cost per query: ~$1.52 - $101.40
-  # Available to Medium and Enterprise plans
-
+    processByBatch: true
   - modelId: gpt-4.1-2025-04-14
     name: GPT-4.1
     provider: openai
-    description: "Latest GPT-4 with enhanced capabilities - Very expensive, limit to 1 per Medium plan"
-    costTier: "Premium"
-    costPerQueryUSD: 202.80
+    description: Latest GPT-4 with enhanced capabilities - Very expensive, limit to 1 per Medium plan
+    costTier: Premium
+    costPerQueryUSD: 202.8
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-    warning: "Very expensive - limit to 1 per Medium plan"
-
+    warning: Very expensive - limit to 1 per Medium plan
+    processByBatch: true
   - modelId: claude-haiku-4-5
     name: Claude Haiku 4.5
     provider: google
-    description: "Latest Claude Haiku model"
-    costTier: "Premium"
+    description: Latest Claude Haiku model
+    costTier: Premium
     costPerQueryUSD: 4.56
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
+    processByBatch: true
   - modelId: claude-3-opus-20240229
     name: Claude 3 Opus
     provider: google
-    description: "Most powerful Claude model for complex reasoning - Expensive, limit to 1 per Medium plan"
-    costTier: "Premium"
-    costPerQueryUSD: 101.40
+    description: Most powerful Claude model for complex reasoning - Expensive, limit to 1 per Medium plan
+    costTier: Premium
+    costPerQueryUSD: 101.4
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-    warning: "Expensive - limit to 1 per Medium plan"
-
+    warning: Expensive - limit to 1 per Medium plan
+    processByBatch: true
   - modelId: gemini-2.5-flash-lite
     name: Gemini 2.5 Flash Lite
     provider: google
-    description: "Lightweight Gemini model for quick tasks"
-    costTier: "Premium"
+    description: Lightweight Gemini model for quick tasks
+    costTier: Premium
     costPerQueryUSD: 1.52
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
-  # PREMIUM TIER MODELS (ENTERPRISE ONLY)
-  # Cost per query: ~$20.28 - $81.12
-  # Available to Enterprise plan only
-
+    processByBatch: true
   - modelId: gpt-4-turbo-2024-04-09
     name: GPT-4 Turbo
     provider: openai
-    description: "Optimized GPT-4 model for complex tasks"
-    costTier: "Premium"
+    description: Optimized GPT-4 model for complex tasks
+    costTier: Premium
     costPerQueryUSD: 81.12
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
+    processByBatch: true
   - modelId: gpt-4.1-mini-2025-04-14
     name: GPT-4.1 Mini
     provider: openai
-    description: "Efficient GPT-4.1 for faster responses"
-    costTier: "Premium"
+    description: Efficient GPT-4.1 for faster responses
+    costTier: Premium
     costPerQueryUSD: 20.28
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
+    processByBatch: true
   - modelId: gemini-2.0-flash
     name: Gemini 2.0 Flash
     provider: google
-    description: "Latest Gemini Flash model"
-    costTier: "Premium"
+    description: Latest Gemini Flash model
+    costTier: Premium
     costPerQueryUSD: 20.28
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
     suggestedUpgrade: null
-
-  # DEPRECATED MODELS (for grandfathering)
-  # These models are no longer selectable but can still be used by existing users
-
+    processByBatch: true
   - modelId: gemini-2.0-flash-exp
     name: Gemini 2.0 Flash (Experimental)
     provider: google
-    description: "Experimental version - deprecated"
-    costTier: "Premium"
+    description: Experimental version - deprecated
+    costTier: Premium
     costPerQueryUSD: 20.28
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: false
     suggestedUpgrade: gemini-2.0-flash
-
   - modelId: gemini-1.5-pro
     name: Gemini 1.5 Pro
     provider: google
-    description: "Previous generation - deprecated"
-    costTier: "Professional"
+    description: Previous generation - deprecated
+    costTier: Professional
     costPerQueryUSD: 4.64
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: true
     suggestedUpgrade: gemini-2.5-pro
-
+    processByBatch: true
   - modelId: gemini-1.5-flash
     name: Gemini 1.5 Flash
     provider: google
-    description: "Previous generation - deprecated"
-    costTier: "Basic"
+    description: Previous generation - deprecated
+    costTier: Basic
     costPerQueryUSD: 0.11
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: true
     suggestedUpgrade: gemini-2.5-flash
-
+    processByBatch: true
   - modelId: gpt-4o
     name: GPT-4o (Legacy)
     provider: openai
-    description: "Legacy version without date suffix - deprecated"
-    costTier: "Professional"
+    description: Legacy version without date suffix - deprecated
+    costTier: Professional
     costPerQueryUSD: 9.29
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: true
     suggestedUpgrade: gpt-4o-2024-08-06
-
+    processByBatch: true
   - modelId: gpt-4-turbo
     name: GPT-4 Turbo (Legacy)
     provider: openai
-    description: "Legacy version without date suffix - deprecated"
-    costTier: "Premium"
+    description: Legacy version without date suffix - deprecated
+    costTier: Premium
     costPerQueryUSD: 81.12
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: true
     suggestedUpgrade: gpt-4-turbo-2024-04-09
-
+    processByBatch: true
   - modelId: gpt-4
     name: GPT-4 (Legacy)
     provider: openai
-    description: "Legacy base GPT-4 - deprecated"
-    costTier: "Premium"
+    description: Legacy base GPT-4 - deprecated
+    costTier: Premium
     costPerQueryUSD: 81.12
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: true
     suggestedUpgrade: gpt-4-turbo-2024-04-09
-
+    processByBatch: true
   - modelId: claude-sonnet-4@20250514
     name: Claude Sonnet 4 (Legacy)
     provider: google
-    description: "Legacy identifier - deprecated"
-    costTier: "Professional"
+    description: Legacy identifier - deprecated
+    costTier: Professional
     costPerQueryUSD: 13.84
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: true
     suggestedUpgrade: claude-3-5-sonnet-20241022
-
+    processByBatch: true
   - modelId: claude-opus-4@20250514
     name: Claude Opus 4 (Legacy)
     provider: google
-    description: "Legacy identifier - deprecated"
-    costTier: "Premium"
-    costPerQueryUSD: 101.40
+    description: Legacy identifier - deprecated
+    costTier: Premium
+    costPerQueryUSD: 101.4
     showInUI: true
     isSelectable: false
     allowedInBatchJobs: true
     suggestedUpgrade: claude-3-opus-20240229
+    processByBatch: true

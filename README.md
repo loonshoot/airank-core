@@ -1,5 +1,34 @@
-# api-gateway-pattern
-api gateway pattern implementation using node.js
+# AIRank Core
+
+AI-powered ranking system with cost-optimized batch processing for OpenAI, Claude, and Gemini models.
+
+## 🚀 Features
+
+- **Batch Processing**: 50% cost savings using OpenAI Batch API and Vertex AI batch prediction
+- **Multi-Provider**: Supports OpenAI, Claude (via Vertex AI), and Gemini
+- **Automatic Routing**: Recurring jobs use batching, immediate jobs use real-time API
+- **Change Stream Listeners**: MongoDB change streams for real-time batch result processing
+- **Sentiment Analysis**: Automatic brand sentiment analysis on all results
+
+## 📦 Batch Processing Quick Start
+
+```bash
+# 1. Run setup (creates GCS bucket, Pub/Sub, service accounts)
+./scripts/setup-gcp-batch-infrastructure.sh
+
+# 2. Run pre-flight checks
+./scripts/test-batch-system.sh
+
+# 3. Start services
+# Terminal 1: cd graphql && npm start
+# Terminal 2: cd batcher && npm start
+# Terminal 3: cd listener && npm start
+```
+
+**Full documentation:**
+- 📖 [Quick Start Guide](BATCH_QUICKSTART.md)
+- 📖 [Complete Setup Guide](docs/BATCH_SETUP_GUIDE.md)
+- 📖 [Architecture Documentation](docs/BATCH_PROCESSING.md)
 
 ## Development Environment
 
