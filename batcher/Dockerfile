@@ -40,6 +40,11 @@ RUN echo "===============================================" && \
     echo "Local config package installed successfully"
 
 COPY batcher/ .
+
+# Copy config directory for job discovery (batcher needs direct access to config/jobs)
+# This is separate from the npm packaged config
+COPY config /app/config/
+
 COPY scripts/setup-gcp-env.sh /usr/local/bin/setup-gcp-env.sh
 RUN chmod +x /usr/local/bin/setup-gcp-env.sh
 
