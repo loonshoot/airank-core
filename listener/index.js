@@ -1,10 +1,6 @@
 #!/usr/bin/env node
 
-const { setupGCPCredentials } = require('../config/gcp-credentials');
 const ListenerManager = require('./src/listener-manager');
-
-// Setup GCP credentials from environment variable (for Dokploy/Docker)
-setupGCPCredentials();
 
 async function main() {
   console.log('🚀 Starting AIRank Listener Service...');

@@ -40,5 +40,7 @@ RUN echo "===============================================" && \
     echo "Local config package installed successfully"
 
 COPY batcher/ .
+COPY scripts/setup-gcp-env.sh /usr/local/bin/setup-gcp-env.sh
+RUN chmod +x /usr/local/bin/setup-gcp-env.sh
 
-CMD ["npm", "start"] 
+CMD ["/usr/local/bin/setup-gcp-env.sh", "npm", "start"] 

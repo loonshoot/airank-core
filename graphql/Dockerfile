@@ -36,6 +36,8 @@ RUN echo "===============================================" && \
     echo "Local config package installed successfully"
 
 COPY graphql/ .
+COPY scripts/setup-gcp-env.sh /usr/local/bin/setup-gcp-env.sh
+RUN chmod +x /usr/local/bin/setup-gcp-env.sh
 
 EXPOSE 4002
-CMD ["node", "index.js"] 
+CMD ["/usr/local/bin/setup-gcp-env.sh", "node", "index.js"] 

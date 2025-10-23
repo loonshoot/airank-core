@@ -6,7 +6,7 @@ This guide explains how to configure environment variables in Dokploy for the ai
 
 ### GCP Service Account Key (for Batch Processing)
 
-The GCP service account credentials need to be added as an environment variable since Dokploy doesn't support uploading files directly.
+**IMPORTANT:** Since the Google Cloud SDK libraries will automatically use the `GOOGLE_APPLICATION_CREDENTIALS` environment variable, we just need to provide the JSON credentials as a string.
 
 1. **Get the JSON key as a single line:**
    ```bash
@@ -18,12 +18,14 @@ The GCP service account credentials need to be added as an environment variable 
    - Navigate to **Environment** tab
    - Add a new environment variable:
      - **Name:** `GCP_SERVICE_ACCOUNT_KEY`
-     - **Value:** Paste the entire JSON output from step 1 (it should be a single line)
+     - **Value:** Paste the entire JSON output from step 1 (NO quotes around it)
 
-   Example format:
+   The value should look like:
    ```
    {"type":"service_account","project_id":"airank-production","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"..."}
    ```
+
+   **Do NOT wrap in quotes** - just paste the raw JSON.
 
 ### Other GCP Variables
 

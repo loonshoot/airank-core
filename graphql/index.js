@@ -7,12 +7,8 @@ require('dotenv').config();
 const { promisify } = require('util');
 const crypto = require('crypto');
 const hkdf = promisify(crypto.hkdf);
-const { setupGCPCredentials } = require('../config/gcp-credentials');
 const app = express();
 const port = 4002;
-
-// Setup GCP credentials from environment variable (for Dokploy/Docker)
-setupGCPCredentials();
 
 // Import jose dynamically
 let jwtDecrypt;
