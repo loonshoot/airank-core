@@ -11,6 +11,8 @@
     "license": "MIT",
     "dependencies": {
         "@airank/config": "file:../config",
+        "@google-cloud/aiplatform": "^3.32.0",
+        "@google-cloud/storage": "^7.14.0",
         "@hokify/agenda": "^6.3.0",
         "agenda": "^5.0.0",
         "apollo-server-express": "^3.12.1",
@@ -23,6 +25,7 @@
         "jsonwebtoken": "^9.0.2",
         "mongoose": "8.10.0",
         "slugify": "^1.6.6",
+        "stripe": "^17.4.0",
         "uuidv4": "^6.2.13"
     }
 }
