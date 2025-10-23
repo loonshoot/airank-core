@@ -45,6 +45,9 @@ COPY batcher/ .
 # This is separate from the npm packaged config
 COPY config /app/config/
 
+# Copy graphql helpers needed by promptModelTester job
+COPY graphql/mutations/helpers /app/graphql/mutations/helpers/
+
 COPY scripts/setup-gcp-env.sh /usr/local/bin/setup-gcp-env.sh
 RUN chmod +x /usr/local/bin/setup-gcp-env.sh
 
