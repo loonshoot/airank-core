@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const path = require('path');
+const { getPlanConfig } = require('../../../config/plans');
 
 // GraphQL type definitions
 const typeDefs = gql`
@@ -263,6 +264,7 @@ async function getEntitlements(workspaceId) {
     modelsLimit: 1,
     promptCharacterLimit: 25,
     jobFrequency: 'monthly',
+    allowedModels: ['gpt-4o-mini-2024-07-18']
   } : billingProfile;
 
   // Count actual brands and prompts (live count)
@@ -295,10 +297,15 @@ async function getEntitlements(workspaceId) {
 
   // Get workspace models to enforce limits
   const models = await getWorkspaceModels(workspaceId);
+
+  // Get allowedModels from billing profile, or fallback to plan config
+  const planConfig = getPlanConfig(effectiveProfile.currentPlan);
+  const allowedModels = effectiveProfile.allowedModels || planConfig.allowedModels || [];
+
   const modelEntitlements = enforceModelLimits(
     models,
     effectiveProfile.modelsLimit,
-    effectiveProfile.allowedModels
+    allowedModels
   );
 
   return {

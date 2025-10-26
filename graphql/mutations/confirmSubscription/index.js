@@ -31,6 +31,21 @@ if (stripeKey && stripeKey !== 'sk_test' && stripeKey.startsWith('sk_')) {
           }
         };
       }
+    },
+    products: {
+      retrieve: async (productId) => {
+        return {
+          id: productId,
+          name: 'Test Plan',
+          metadata: {
+            plan_id: 'small',
+            brands_limit: '4',
+            prompts_limit: '10',
+            models_limit: '3',
+            allowed_models: 'gpt-4o-mini-2024-07-18,claude-3-5-haiku-20241022,gemini-2.5-flash'
+          }
+        };
+      }
     }
   };
 }
@@ -74,17 +89,51 @@ const resolvers = {
     // Retrieve subscription from Stripe to get latest status
     const subscription = await stripe.subscriptions.retrieve(billingProfile.stripeSubscriptionId);
 
-    // Update billing profile with subscription details
+    // Get the product ID from the subscription
+    const productId = subscription.items.data[0]?.price?.product;
+
+    // Fetch product metadata from Stripe to sync entitlements
+    const product = productId ? await stripe.products.retrieve(productId) : null;
+    const metadata = product?.metadata || {};
+
+    // Parse entitlements from Stripe product metadata
+    const allowedModelsStr = metadata.allowed_models || '';
+    const allowedModels = allowedModelsStr === '*' ? ['*'] : allowedModelsStr.split(',').filter(Boolean);
+
+    const updateFields = {
+      planStatus: subscription.status,
+      currentPeriodStart: new Date(subscription.current_period_start * 1000),
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      updatedAt: new Date()
+    };
+
+    // Sync plan entitlements from Stripe metadata
+    if (metadata.plan_id) {
+      updateFields.currentPlan = metadata.plan_id;
+    }
+    if (metadata.brands_limit) {
+      updateFields.brandsLimit = parseInt(metadata.brands_limit, 10);
+    }
+    if (metadata.prompts_limit) {
+      updateFields.promptsLimit = parseInt(metadata.prompts_limit, 10);
+    }
+    if (metadata.models_limit) {
+      updateFields.modelsLimit = parseInt(metadata.models_limit, 10);
+    }
+    if (metadata.batch_frequency) {
+      updateFields.jobFrequency = metadata.batch_frequency;
+    }
+    if (metadata.data_retention_days) {
+      updateFields.dataRetentionDays = parseInt(metadata.data_retention_days, 10);
+    }
+    if (allowedModels.length > 0) {
+      updateFields.allowedModels = allowedModels;
+    }
+
+    // Update billing profile with subscription details and entitlements
     await db.collection('billingprofiles').updateOne(
       { _id: billingProfileId },
-      {
-        $set: {
-          planStatus: subscription.status,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-          updatedAt: new Date()
-        }
-      }
+      { $set: updateFields }
     );
 
     // Return updated billing profile

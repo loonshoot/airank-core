@@ -67,6 +67,7 @@ const resolvers = {
         promptCharacterLimit: 150,
         promptsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         modelsLimit: 1,
+        allowedModels: ['gpt-4o-mini-2024-07-18'],  // Free tier allowed models
         jobFrequency: 'monthly',
         dataRetentionDays: 30,
         hasPaymentMethod: false,
