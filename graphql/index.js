@@ -643,6 +643,13 @@ mongoose.connect(mongoUri)
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, do-connecting-ip');
+
+      // Handle preflight OPTIONS requests
+      if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+      }
+
       next();
     });
 
@@ -751,7 +758,13 @@ mongoose.connect(mongoUri)
 
     // Start the server
     server.start().then(() => {
-      server.applyMiddleware({ app });
+      server.applyMiddleware({
+        app,
+        cors: {
+          origin: '*',
+          credentials: true
+        }
+      });
       app.listen(port, () => {
         console.log(`GraphQL server listening on port ${port}`);
       });
