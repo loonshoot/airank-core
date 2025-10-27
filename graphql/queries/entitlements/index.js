@@ -3,7 +3,16 @@ const mongoose = require('mongoose');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const path = require('path');
-const { getPlanConfig } = require('../../../config/plans');
+
+// Load plans config - handle both local dev and Docker paths
+let getPlanConfig;
+try {
+  // Try Docker path first (queries is directly under /app)
+  getPlanConfig = require('../../config/plans').getPlanConfig;
+} catch (e) {
+  // Fall back to local dev path
+  getPlanConfig = require('../../../config/plans').getPlanConfig;
+}
 
 // GraphQL type definitions
 const typeDefs = gql`
