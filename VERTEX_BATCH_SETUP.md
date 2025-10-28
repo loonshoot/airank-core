@@ -112,7 +112,7 @@ gcloud pubsub topics create vertex-batch-completion --project=airank-production
 
 ### Step 4: Create Pub/Sub Push Subscription
 
-**Domain**: stream.getairank.com (maps to graphql service port 4002)
+**Domain**: stream.getairank.com (maps to stream service port 4003)
 
 ```bash
 # Webhook URL - generic endpoint that extracts workspaceId from GCS file path
@@ -180,20 +180,24 @@ GOOGLE_APPLICATION_CREDENTIALS=./gcp-batch-processor-key.json  # Path to service
 
 ## Webhook Endpoint
 
-The webhook is already implemented in `graphql/index.js:660-748`:
+The webhook is implemented in dedicated `stream` service (`stream/index.js`):
 
 ```
+Service: stream (port 4003)
 POST /webhooks/batch
 
 Handles:
-- GCS Pub/Sub push notifications
+- GCS Pub/Sub push notifications for Vertex AI batches
 - Extracts workspaceId from GCS file path automatically
-- Downloads Vertex AI batch results
-- Updates batch status to trigger processing
+- Downloads Vertex AI batch results from GCS
+- Updates batch status to 'received' (triggers listener)
 - Cleans up GCS files
 
 URL: https://stream.getairank.com/webhooks/batch
 ```
+
+**Architecture**: Following outrun-core pattern, webhooks and external integrations
+are handled by a dedicated `stream` service, separate from the GraphQL API.
 
 ## Supported Models via Vertex AI
 

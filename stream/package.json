@@ -1,0 +1,19 @@
+{
+  "name": "airank-stream",
+  "version": "1.0.0",
+  "description": "AIRank streaming service for webhooks and external integrations",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "dotenv": "^16.3.1",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

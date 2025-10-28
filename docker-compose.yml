@@ -56,3 +56,18 @@ services:
       default:
         aliases:
           - listener
+
+  stream:
+    <<: *common-config
+    container_name: airank-core-stream
+    build:
+      context: .
+      dockerfile: ./stream/Dockerfile
+    ports:
+      - 4003:4003
+    environment:
+      - STREAM_PORT=4003
+    networks:
+      default:
+        aliases:
+          - stream
