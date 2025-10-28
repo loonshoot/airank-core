@@ -83,7 +83,11 @@ const typeDefs = gql`
  */
 function getModelPriorities() {
   try {
-    const configPath = path.join(__dirname, '../../../config/model-priority.yaml');
+    // Try Docker path first, then local dev path
+    let configPath = path.join(__dirname, '../../config/model-priority.yaml');
+    if (!fs.existsSync(configPath)) {
+      configPath = path.join(__dirname, '../../../config/model-priority.yaml');
+    }
     const fileContents = fs.readFileSync(configPath, 'utf8');
     const config = yaml.load(fileContents);
     return config.priority || [];
@@ -98,7 +102,11 @@ function getModelPriorities() {
  */
 function getModelsConfig() {
   try {
-    const configPath = path.join(__dirname, '../../../config/models.yaml');
+    // Try Docker path first, then local dev path
+    let configPath = path.join(__dirname, '../../config/models.yaml');
+    if (!fs.existsSync(configPath)) {
+      configPath = path.join(__dirname, '../../../config/models.yaml');
+    }
     const fileContents = fs.readFileSync(configPath, 'utf8');
     const config = yaml.load(fileContents);
     return config.models || [];
