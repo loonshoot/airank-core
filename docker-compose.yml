@@ -45,3 +45,14 @@ services:
       default:
         aliases:
           - batcher
+
+  listener:
+    <<: *common-config
+    container_name: airank-core-listener
+    build:
+      context: .
+      dockerfile: ./listener/Dockerfile
+    networks:
+      default:
+        aliases:
+          - listener
