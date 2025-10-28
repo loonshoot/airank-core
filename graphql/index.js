@@ -655,12 +655,13 @@ mongoose.connect(mongoUri)
 
     // Batch processing webhook (before authentication middleware)
     app.use(express.json());
-    app.post('/webhooks/batch/:workspaceId', async (req, res) => {
+
+    // Generic webhook for all workspaces - extracts workspaceId from GCS path
+    app.post('/webhooks/batch', async (req, res) => {
       try {
-        const { workspaceId } = req.params;
         const pubsubMessage = req.body;
 
-        console.log(`📨 Batch webhook received for workspace ${workspaceId}`);
+        console.log(`📨 Batch webhook received`);
 
         // Verify Pub/Sub message format
         if (!pubsubMessage || !pubsubMessage.message) {
@@ -686,6 +687,17 @@ mongoose.connect(mongoUri)
           console.log('⚠️ Skipping non-output file:', fileName);
           return res.status(200).send('OK');
         }
+
+        // Extract workspaceId from GCS path: batches/output/{workspaceId}/{timestamp}/file.jsonl
+        const pathParts = fileName.split('/');
+        const outputIndex = pathParts.indexOf('output');
+        if (outputIndex === -1 || outputIndex + 1 >= pathParts.length) {
+          console.error('Could not extract workspaceId from path:', fileName);
+          return res.status(400).send('Invalid file path structure');
+        }
+        const workspaceId = pathParts[outputIndex + 1];
+
+        console.log(`📍 Extracted workspace ID: ${workspaceId}`);
 
         // Import batch helpers
         const { downloadBatchResults } = require('./mutations/helpers/batch');
