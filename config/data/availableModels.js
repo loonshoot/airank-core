@@ -115,15 +115,36 @@ const isModelHistoric = (modelId) => {
 const getModelConfig = (modelId, task = 'generation') => {
   const configs = {
     // OpenAI Models - Web GUI (ChatGPT) defaults to a balanced, creative setting.
+    // Note: OpenAI only supports max_tokens, temperature, top_p (NOT top_k)
     'gpt-4': {
       generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
-      sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 } // More focused for sentiment
+      sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
     },
     'gpt-4o': {
       generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
       sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
     },
+    'gpt-4o-2024-08-06': {
+      generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
+      sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
+    },
+    'gpt-4o-mini-2024-07-18': {
+      generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
+      sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
+    },
     'gpt-4-turbo': {
+      generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
+      sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
+    },
+    'gpt-4-turbo-2024-04-09': {
+      generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
+      sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
+    },
+    'gpt-4.1-2025-04-14': {
+      generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
+      sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
+    },
+    'gpt-4.1-mini-2025-04-14': {
       generation: { max_tokens: 4096, temperature: 0.7, top_p: 1 },
       sentiment: { max_tokens: 500, temperature: 0.2, top_p: 1 }
     },
@@ -154,8 +175,8 @@ const getModelConfig = (modelId, task = 'generation') => {
     return configs[modelId][task];
   }
 
-  // Fallback to a default generation config if the model or task is not found
-  return { max_tokens: 1024, temperature: 0.7, top_p: 1.0, top_k: 40 };
+  // Fallback to a default config (OpenAI-compatible, no top_k)
+  return { max_tokens: 1024, temperature: 0.7, top_p: 1.0 };
 };
 
 module.exports = {
