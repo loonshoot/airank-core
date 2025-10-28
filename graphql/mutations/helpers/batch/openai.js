@@ -26,8 +26,10 @@ async function submitOpenAIBatch(requests, workspaceDb, workspaceId) {
   })).join('\n');
 
   // Upload file to OpenAI
+  // Convert Buffer to File object for OpenAI SDK v4
+  const buffer = Buffer.from(jsonlContent, 'utf-8');
   const file = await openai.files.create({
-    file: Buffer.from(jsonlContent),
+    file: new File([buffer], 'batch.jsonl', { type: 'application/jsonl' }),
     purpose: 'batch'
   });
 
