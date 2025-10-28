@@ -262,14 +262,77 @@ module.exports = async function promptModelTester(job, done) {
             return done();
         }
 
-        // Get active models and filter to only include those with available providers
-        const availableModels = getActiveModels().filter(model => {
-            const provider = providerFactory.getProvider(model.provider);
-            return provider && provider.isModelSupported(model.id);
-        });
+        // Get enabled models from workspace database
+        const WorkspaceModel = workspaceConnection.model('Model', require('../data/models').ModelSchema);
+        const enabledWorkspaceModels = await WorkspaceModel.find({ isEnabled: true }).maxTimeMS(30000).exec();
+
+        console.log(`✅ Found ${enabledWorkspaceModels.length} enabled models in workspace`);
+
+        if (enabledWorkspaceModels.length === 0) {
+            console.log('⚠️ No models enabled for workspace');
+            return done();
+        }
+
+        // Get billing profile and entitlements to check allowed models
+        const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
+        const airankDb = mongoose.createConnection(airankUri);
+        await airankDb.asPromise();
+
+        const workspace = await airankDb.collection('workspaces').findOne({ _id: workspaceId });
+        const billingProfile = workspace?.billingProfileId
+            ? await airankDb.collection('billingprofiles').findOne({ _id: workspace.billingProfileId })
+            : null;
+
+        await airankDb.close();
+
+        // Get allowed models from billing profile (with fallback to free tier)
+        const { getPlanConfig } = require('../../config/plans');
+        const planConfig = billingProfile?.currentPlan
+            ? getPlanConfig(billingProfile.currentPlan)
+            : getPlanConfig('free');
+        const allowedModels = billingProfile?.allowedModels || planConfig.allowedModels || [];
+
+        console.log(`📋 Plan: ${billingProfile?.currentPlan || 'free'}, Allowed models: ${allowedModels.join(', ')}`);
+
+        // Map workspace models to the format expected by the job (with provider info)
+        // Filter by: enabled + entitled + provider available
+        const { getModelById } = require('../data/availableModels');
+        const availableModels = enabledWorkspaceModels
+            .filter(wm => {
+                // Check if model is allowed by current plan
+                const isAllowed = allowedModels.length === 0 || allowedModels.includes(wm.modelId);
+                if (!isAllowed) {
+                    console.log(`⚠️  Model ${wm.modelId} is enabled but not allowed by current plan`);
+                }
+                return isAllowed;
+            })
+            .map(wm => {
+                // Get full model info from the models list
+                const modelInfo = getModelById(wm.modelId) || {
+                    id: wm.modelId,
+                    name: wm.name,
+                    provider: wm.provider,
+                    status: 'active'
+                };
+                return {
+                    id: modelInfo.id,
+                    name: modelInfo.name || wm.name,
+                    provider: modelInfo.provider || wm.provider,
+                    status: modelInfo.status
+                };
+            })
+            .filter(model => {
+                // Filter to only include models with available providers
+                const provider = providerFactory.getProvider(model.provider);
+                const hasProvider = provider && provider.isModelSupported(model.id);
+                if (!hasProvider) {
+                    console.log(`⚠️  Model ${model.id} provider not available`);
+                }
+                return hasProvider;
+            });
 
         if (availableModels.length === 0) {
-            console.log('⚠️ No models match available providers');
+            console.log('⚠️ No enabled models are both entitled and have available providers');
             return done();
         }
 
