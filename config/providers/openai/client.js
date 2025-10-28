@@ -1,11 +1,23 @@
 const OpenAI = require('openai');
 const { RateLimiter } = require('limiter');
 
-// Rate limits for approved OpenAI models only
+// Rate limits for OpenAI models (based on OpenAI Tier 1 limits)
 const RATE_LIMITS = {
-    'gpt-4': { rpm: 500, tpm: 10000 },
+    // GPT-4o models
     'gpt-4o': { rpm: 500, tpm: 30000 },
-    'gpt-4-turbo': { rpm: 500, tpm: 30000 }
+    'gpt-4o-2024-08-06': { rpm: 500, tpm: 30000 },
+    'gpt-4o-mini-2024-07-18': { rpm: 500, tpm: 200000 },
+
+    // GPT-4 Turbo models
+    'gpt-4-turbo': { rpm: 500, tpm: 30000 },
+    'gpt-4-turbo-2024-04-09': { rpm: 500, tpm: 30000 },
+
+    // GPT-4 models
+    'gpt-4': { rpm: 500, tpm: 10000 },
+
+    // GPT-4.1 models (future models)
+    'gpt-4.1-2025-04-14': { rpm: 500, tpm: 30000 },
+    'gpt-4.1-mini-2025-04-14': { rpm: 500, tpm: 200000 }
 };
 
 class OpenAIProvider {
