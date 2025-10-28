@@ -12,8 +12,8 @@ All environment variables are configured in a **single flat .env file** in Dokpl
 These are **REQUIRED** for sentiment analysis and Gemini model support:
 
 ```bash
-GOOGLE_CLOUD_PROJECT_ID=aitrack-production
-GOOGLE_CLOUD_LOCATION=us-east5
+GCP_PROJECT_ID=aitrack-production
+GCP_REGION=us-east5
 GCP_SERVICE_ACCOUNT_KEY=<paste entire JSON service account key>
 ```
 
@@ -69,11 +69,11 @@ All services (api-gateway, graphql, batcher, listener) read from the root `.env`
 ## Troubleshooting
 
 ### "Google Cloud Project ID not found"
-- Ensure `GOOGLE_CLOUD_PROJECT_ID` is set in your environment
-- Verify the variable name is exactly `GOOGLE_CLOUD_PROJECT_ID` (not `GCP_PROJECT_ID`)
+- Ensure `GCP_PROJECT_ID` is set in your environment
+- Verify the variable name is exactly `GCP_PROJECT_ID` (not `GCP_PROJECT_ID`)
 
 ### "Google provider not available"
-- Check that `GOOGLE_CLOUD_PROJECT_ID` is set
+- Check that `GCP_PROJECT_ID` is set
 - Verify `GCP_SERVICE_ACCOUNT_KEY` contains valid JSON
 - Ensure the service account has Vertex AI permissions
 

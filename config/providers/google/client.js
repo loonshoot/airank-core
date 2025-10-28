@@ -9,15 +9,15 @@ class GoogleProvider {
     this.rateLimiters = new Map();
     this.vertexAI = null;
     this.anthropicVertex = null;
-    this.projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT_ID;
-    this.location = process.env.GOOGLE_CLOUD_LOCATION || 'us-east5'; // us-east5 supports Claude models
+    this.projectId = process.env.GCP_PROJECT_ID;
+    this.location = process.env.GCP_REGION || 'us-east5'; // us-east5 supports Claude models
     
     this.initialize();
   }
 
   async initialize() {
     if (!this.projectId) {
-      console.warn('🟡 Google provider: GOOGLE_CLOUD_PROJECT_ID not set');
+      console.warn('🟡 Google provider: GCP_PROJECT_ID not set');
       return;
     }
 

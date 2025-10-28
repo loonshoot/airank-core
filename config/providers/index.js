@@ -25,7 +25,7 @@ class ProviderFactory {
         }
 
         // Initialize Google if credentials are available (handles both Gemini and Anthropic via Vertex AI)
-        if (process.env.GOOGLE_CLOUD_PROJECT_ID) {
+        if (process.env.GCP_PROJECT_ID) {
             try {
                 const googleProvider = new GoogleProvider();
                 if (googleProvider.vertexAI || googleProvider.anthropicVertex) {
@@ -36,7 +36,7 @@ class ProviderFactory {
                 console.error('❌ Failed to initialize Google provider:', error.message);
             }
         } else {
-            console.warn('🟡 Google Cloud Project ID not found, skipping Google provider');
+            console.warn('🟡 GCP_PROJECT_ID not found, skipping Google provider');
         }
     }
 
