@@ -41,6 +41,9 @@ class ListenerManager {
     // Ensure listeners collection has required indexes
     await this.ensureIndexes();
 
+    // Bootstrap default listeners if they don't exist
+    await this.bootstrapDefaultListeners();
+
     // Start heartbeat for distributed locks
     this.startHeartbeat();
 
@@ -53,6 +56,66 @@ class ListenerManager {
     await Listener.collection.createIndex({ 'lockInfo.instanceId': 1 });
     await Listener.collection.createIndex({ 'lockInfo.lastHeartbeat': 1 });
     console.log('✓ Listener indexes ensured');
+  }
+
+  async bootstrapDefaultListeners() {
+    console.log('🌱 Bootstrapping default listeners...');
+
+    const defaultListeners = [
+      {
+        collection: 'batches',
+        filter: {
+          status: 'received',
+          isProcessed: false
+        },
+        operationType: ['insert', 'update'],
+        jobName: 'processBatchResults',
+        isActive: true,
+        metadata: {
+          description: 'Process batch results when they are received'
+        }
+      },
+      {
+        collection: 'batchnotifications',
+        filter: {
+          processed: false
+        },
+        operationType: ['insert'],
+        jobName: 'processVertexBatchNotification',
+        isActive: true,
+        metadata: {
+          description: 'Process Vertex AI batch completion notifications from GCS'
+        }
+      }
+    ];
+
+    for (const listenerConfig of defaultListeners) {
+      try {
+        // Check if listener already exists
+        const existing = await Listener.findOne({
+          collection: listenerConfig.collection,
+          jobName: listenerConfig.jobName
+        });
+
+        if (!existing) {
+          // Create new listener
+          const listener = new Listener({
+            ...listenerConfig,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          await listener.save();
+          console.log(`  ✓ Created default listener: ${listenerConfig.collection} → ${listenerConfig.jobName}`);
+        } else {
+          console.log(`  ✓ Listener exists: ${listenerConfig.collection} → ${listenerConfig.jobName}`);
+        }
+      } catch (error) {
+        console.error(`  ❌ Failed to bootstrap listener ${listenerConfig.jobName}:`, error);
+      }
+    }
+
+    const count = await Listener.countDocuments({ isActive: true });
+    console.log(`✓ Bootstrap complete: ${count} active listeners in database`);
   }
 
   async startListeners() {
