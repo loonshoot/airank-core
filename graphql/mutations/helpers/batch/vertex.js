@@ -1,5 +1,5 @@
 const { Storage } = require('@google-cloud/storage');
-const { PredictionServiceClient } = require('@google-cloud/aiplatform');
+const { JobServiceClient } = require('@google-cloud/aiplatform').v1;
 const { ObjectId } = require('mongodb');
 
 /**
@@ -18,7 +18,7 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
     projectId: projectId
   });
 
-  const client = new PredictionServiceClient({
+  const client = new JobServiceClient({
     apiEndpoint: `${location}-aiplatform.googleapis.com`
   });
 
@@ -162,7 +162,7 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
 async function checkVertexBatchStatus(batchJobName) {
   const location = process.env.GCP_REGION || 'us-central1';
 
-  const client = new PredictionServiceClient({
+  const client = new JobServiceClient({
     apiEndpoint: `${location}-aiplatform.googleapis.com`
   });
 
