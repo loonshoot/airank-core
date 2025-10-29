@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 require('dotenv').config();
 
 const app = express();
@@ -18,6 +17,8 @@ app.get('/health', (req, res) => {
 });
 
 // Batch processing webhook - handles GCS Pub/Sub notifications
+// This endpoint is lightweight and only creates notification documents
+// The listener service will watch for these and trigger batcher jobs
 app.post('/webhooks/batch', async (req, res) => {
   try {
     const pubsubMessage = req.body;
@@ -60,54 +61,30 @@ app.post('/webhooks/batch', async (req, res) => {
 
     console.log(`📍 Extracted workspace ID: ${workspaceId}`);
 
-    // Import batch helpers
-    const { downloadVertexBatchResults } = require('../graphql/mutations/helpers/batch/vertex');
-
     // Connect to workspace database
     const workspaceUri = `${mongoUri}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
     const workspaceConn = mongoose.createConnection(workspaceUri);
     await workspaceConn.asPromise();
     const workspaceDb = workspaceConn.db;
 
-    // Find the batch document by GCS output prefix
-    const gcsPrefix = `gs://${bucket}/${fileName.split('/').slice(0, -1).join('/')}/`;
+    // Create notification document for the listener to pick up
+    // This keeps the stream service lightweight and fast
+    const gcsUri = `gs://${bucket}/${fileName}`;
+    const notification = {
+      gcsUri,
+      bucket,
+      fileName,
+      workspaceId,
+      receivedAt: new Date(),
+      processed: false
+    };
 
-    let batch = await workspaceDb.collection('batches').findOne({
-      outputGcsPrefix: gcsPrefix,
-      status: { $in: ['submitted', 'processing'] }
-    });
-
-    if (!batch) {
-      // Try to find by checking if the prefix matches
-      const batches = await workspaceDb.collection('batches').find({
-        status: { $in: ['submitted', 'processing'] }
-      }).toArray();
-
-      for (const b of batches) {
-        if (b.outputGcsPrefix && gcsPrefix.startsWith(b.outputGcsPrefix)) {
-          batch = b;
-          break;
-        }
-      }
-
-      if (!batch) {
-        console.log(`⚠️  No matching batch found for ${gcsPrefix}`);
-        await workspaceConn.close();
-        return res.status(200).send('OK');
-      }
-    }
-
-    console.log(`✓ Found batch: ${batch.batchId} (${batch.provider})`);
-
-    // Download and process results for Vertex AI batches
-    if (batch.provider === 'vertex') {
-      await downloadVertexBatchResults(batch.outputGcsPrefix, workspaceDb, batch.batchId);
-      console.log(`✅ Vertex batch results downloaded and stored for ${batch.batchId}`);
-    } else {
-      console.log(`⚠️  Batch provider ${batch.provider} not handled by stream service`);
-    }
+    await workspaceDb.collection('batchnotifications').insertOne(notification);
+    console.log(`✅ Created batch notification document for ${workspaceId}`);
 
     await workspaceConn.close();
+
+    // Return 200 immediately - processing happens asynchronously
     res.status(200).send('OK');
 
   } catch (error) {

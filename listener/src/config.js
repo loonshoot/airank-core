@@ -24,6 +24,17 @@ const config = {
       metadata: {
         description: 'Process batch results when they are received'
       }
+    },
+    {
+      collection: 'batchnotifications',
+      filter: {
+        processed: false
+      },
+      operationType: ['insert'],
+      jobName: 'processVertexBatchNotification',
+      metadata: {
+        description: 'Process Vertex AI batch completion notifications from GCS'
+      }
     }
   ]
 };

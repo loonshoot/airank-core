@@ -13,8 +13,10 @@
 
 ## Architecture Overview
 
+### Optimized for Security & Scalability
+
 ```
-Vertex AI Batch Flow:
+Vertex AI Batch Flow (Horizontally Scalable):
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. Submit Batch (promptModelTester job)                     │
 │    └─> Upload JSONL to GCS: gs://bucket/batches/input/...  │
@@ -36,28 +38,59 @@ Vertex AI Batch Flow:
 └─────────────────────────────────────────────────────────────┘
                            ⬇
 ┌─────────────────────────────────────────────────────────────┐
-│ 4. Webhook Endpoint (READY - Code exists)                   │
-│    POST /webhooks/batch/:workspaceId                         │
+│ 4. Stream Service - Lightweight Webhook (READY)             │
+│    POST /webhooks/batch                                      │
 │    └─> Receives GCS notification                            │
-│    └─> Downloads results from GCS                           │
+│    └─> Extracts workspaceId from GCS path                   │
+│    └─> Creates batchnotifications document                  │
+│    └─> Returns 200 immediately                              │
+│                                                              │
+│    🔒 Security: No GCS credentials exposed to internet      │
+│    📈 Scalable: Fast response, can handle high throughput   │
+└─────────────────────────────────────────────────────────────┘
+                           ⬇
+┌─────────────────────────────────────────────────────────────┐
+│ 5. Listener Service - Change Stream Monitor (READY)         │
+│    └─> Watches batchnotifications collection                │
+│    └─> Detects new notification (processed: false)          │
+│    └─> Creates processVertexBatchNotification job           │
+│                                                              │
+│    📈 Scalable: Can run multiple listener instances         │
+└─────────────────────────────────────────────────────────────┘
+                           ⬇
+┌─────────────────────────────────────────────────────────────┐
+│ 6. Batcher Service - Download & Process (READY)             │
+│    processVertexBatchNotification job:                       │
+│    └─> Downloads results from GCS (secure credentials)      │
 │    └─> Updates batch to status: 'received'                  │
 │    └─> Deletes GCS files (cleanup)                          │
+│    └─> Marks notification as processed                      │
+│                                                              │
+│    💰 Cost Optimization: Can restrict scaling (non-realtime)│
+│    🔒 Security: GCS credentials only in batcher             │
 └─────────────────────────────────────────────────────────────┘
                            ⬇
 ┌─────────────────────────────────────────────────────────────┐
-│ 5. MongoDB Change Stream (READY - Listener running)         │
+│ 7. Listener Service - Batch Results Monitor (READY)         │
 │    └─> Detects batch.status = 'received'                    │
-│    └─> Creates processBatchResults job in Agenda            │
+│    └─> Creates processBatchResults job                      │
 └─────────────────────────────────────────────────────────────┘
                            ⬇
 ┌─────────────────────────────────────────────────────────────┐
-│ 6. Batcher Service (READY - Code tested)                    │
-│    └─> Executes processBatchResults job                     │
+│ 8. Batcher Service - Sentiment Analysis (READY)             │
+│    processBatchResults job:                                  │
 │    └─> Parses results and saves to database                 │
 │    └─> Runs sentiment analysis (Gemini)                     │
 │    └─> Marks batch.isProcessed = true                       │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Key Architectural Benefits
+
+1. **Security**: GCS credentials never exposed to internet-facing webhook
+2. **Scalability**: Stream service can scale horizontally for high throughput
+3. **Cost Optimization**: Batcher can be scaled conservatively (non-realtime processing)
+4. **Separation of Concerns**: Each service has a single, focused responsibility
 
 ## Required Setup Steps
 
