@@ -80,7 +80,7 @@ class ListenerManager {
         filter: {
           processed: false
         },
-        operationType: ['insert'],
+        operationType: ['insert', 'update'],
         jobName: 'processVertexBatchNotification',
         isActive: true,
         metadata: {
