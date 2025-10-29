@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const ListenerManager = require('./src/listener-manager');
+const ListenerManager = require('./src/listener-manager-dynamic');
 
 async function main() {
   console.log('🚀 Starting AIRank Listener Service...');
