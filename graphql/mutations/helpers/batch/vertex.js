@@ -47,9 +47,8 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
           temperature: 0.7
         }
       },
-      metadata: {
-        custom_id: req.custom_id
-      }
+      // Store custom_id as a simple string field for tracking
+      custom_id: req.custom_id
     });
   }).join('\n');
 
