@@ -672,7 +672,7 @@ mongoose.connect(mongoUri)
           credentials: true
         }
       });
-      app.listen(port, () => {
+      app.listen(port, '0.0.0.0', () => {
         console.log(`GraphQL server listening on port ${port}`);
       });
     });
