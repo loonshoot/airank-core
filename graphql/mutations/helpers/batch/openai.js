@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const { ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
 
 /**
  * Submit a batch job to OpenAI
@@ -45,7 +45,7 @@ async function submitOpenAIBatch(requests, workspaceDb, workspaceId) {
 
   // Store batch metadata in MongoDB
   const batchDoc = {
-    _id: new ObjectId(),
+    _id: new mongoose.Types.ObjectId(),
     workspaceId: workspaceId,
     batchId: batch.id,
     provider: 'openai',
