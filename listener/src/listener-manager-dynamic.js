@@ -78,13 +78,27 @@ class ListenerManager {
       {
         collection: 'batchnotifications',
         filter: {
-          processed: false
+          processed: false,
+          provider: 'vertex'
         },
         operationType: ['insert', 'update'],
         jobName: 'processVertexBatchNotification',
         isActive: true,
         metadata: {
           description: 'Process Vertex AI batch completion notifications from GCS'
+        }
+      },
+      {
+        collection: 'batchnotifications',
+        filter: {
+          processed: false,
+          provider: 'openai'
+        },
+        operationType: ['insert', 'update'],
+        jobName: 'processOpenAIBatchNotification',
+        isActive: true,
+        metadata: {
+          description: 'Process OpenAI batch completion notifications'
         }
       }
     ];

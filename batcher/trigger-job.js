@@ -11,7 +11,7 @@ async function triggerJob() {
     await agenda.start();
     console.log('Connected to Agenda');
     
-    const workspaceId = '68568b24760cfe6918a6fba9';
+    const workspaceId = process.argv[2] || '690089a0df6b55271c136dee';
     
     console.log(`Triggering promptModelTester job for workspace: ${workspaceId}`);
     
