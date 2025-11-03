@@ -91,7 +91,7 @@ async function discoverJobs(directory) {
 async function initializeJobs() {
   try {
     // Only scan the dedicated jobs directory (in root config/jobs)
-    const jobsPath = path.join(__dirname, '..', 'config', 'jobs');
+    const jobsPath = path.join(__dirname, 'config', 'jobs');
 
     console.log('Discovering jobs in jobs directory:', jobsPath);
 
