@@ -22,7 +22,20 @@ module.exports = async function processVertexBatchNotification(job, done) {
 
   try {
     console.log(`🔄 Processing Vertex AI batch notification for workspace ${workspaceId}`);
+    console.log(`📦 Provider: ${document.provider || 'unknown'}`);
     console.log(`📦 GCS URI: ${document.gcsUri}`);
+
+    // Defensive check: Only process Vertex AI notifications
+    if (document.provider !== 'vertex') {
+      console.log(`⚠️  Skipping non-Vertex notification (provider: ${document.provider})`);
+      return done();
+    }
+
+    // Verify we have GCS URI
+    if (!document.gcsUri) {
+      console.log(`⚠️  Missing gcsUri for Vertex notification`);
+      return done(new Error('gcsUri is required for Vertex batch notifications'));
+    }
 
     // Connect to workspace-specific database
     const mongoUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;

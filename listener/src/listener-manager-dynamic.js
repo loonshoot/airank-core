@@ -289,7 +289,7 @@ class ListenerManager {
       pipeline.push({ $match: filterMatch });
     }
 
-    console.log(`🎧 Starting listener: ${streamKey}`);
+    console.log(`🎧 Starting listener: ${streamKey} with filter:`, JSON.stringify(listener.filter || {}));
 
     try {
       // Create change stream
