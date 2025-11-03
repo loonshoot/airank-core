@@ -169,11 +169,17 @@ Brands to check: ${allBrands.map(b => `${b.name} (${b.type})`).join(', ')}
 
 Text: "${responseText}"
 
+IMPORTANT INSTRUCTIONS:
+1. In the "brandKeywords" field, use ONLY the EXACT brand names provided above (e.g., if "NAB" is provided, use "NAB", not "NAB (National Australia Bank)" or "National Australia Bank (NAB)")
+2. When you detect a brand mention with a variation (e.g., "National Australia Bank" or "NAB (National Australia Bank)"), normalize it to the exact brand name provided if they are semantically the same
+3. If a brand mentioned in the text is NOT semantically equivalent to any of the provided brands, do NOT include it in the results
+4. ONLY return brands from the provided list above
+
 JSON format:
 {
     "brands": [
         {
-            "brandKeywords": "string",
+            "brandKeywords": "string (MUST be exact brand name from the list above)",
             "type": "own"|"competitor",
             "mentioned": boolean,
             "sentiment": "positive"|"negative"|"not-determined"
@@ -182,7 +188,7 @@ JSON format:
     "overallSentiment": "positive"|"negative"|"not-determined"
 }
 
-Include ALL brands in the array. Return JSON only:`;
+Include ALL brands from the provided list in the array. Return JSON only:`;
 
             const sentimentConfig = getModelConfig('gemini-2.5-flash', 'sentiment');
             const analysisResult = await googleProvider.generateText('gemini-2.5-flash', analysisPrompt, sentimentConfig);

@@ -128,20 +128,32 @@ const resolvers = {
     }
 
     const userId = user.sub;
-    
+
     // Find member with the user's userId
     const member = await Member.findOne({
       workspaceId,
       userId: userId,
       permissions: "query:analytics"
     });
-    
+
     if (!member) {
       throw new Error('User not authorized to query analytics');
     }
 
     const { PreviousModelResult } = Analytics(workspaceId);
     const { start, end } = getDateRange(startDate, endDate);
+
+    // Get workspace brands for filtering
+    const dataLakeUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
+    const brandConnection = mongoose.createConnection(dataLakeUri);
+    const BrandSchema = new mongoose.Schema({
+      name: String,
+      isOwnBrand: Boolean
+    });
+    const Brand = brandConnection.model('Brand', BrandSchema);
+    const workspaceBrands = await Brand.find({});
+    const validBrandNames = new Set(workspaceBrands.map(b => b.name));
+    await brandConnection.close();
 
     try {
       // Get all results with sentiment analysis in date range
@@ -193,9 +205,10 @@ const resolvers = {
         }
         
         result.sentimentAnalysis.brands.forEach(brand => {
-          if (brand.mentioned) {
+          // Only process brands that match the workspace's configured brands
+          if (brand.mentioned && validBrandNames.has(brand.brandKeywords)) {
             const brandKey = `${brand.brandKeywords}-${brand.type}`;
-            
+
             // Track prompt performance
             if (brand.type === 'own') {
               ownBrandPromptPerformanceMap.set(result.prompt, (ownBrandPromptPerformanceMap.get(result.prompt) || 0) + 1);
@@ -206,7 +219,7 @@ const resolvers = {
             // Track daily mentions
             const dayBrands = dailyMentionsMap.get(date);
             dayBrands.set(brandKey, (dayBrands.get(brandKey) || 0) + 1);
-            
+
             // Track brand sentiment
             if (!brandSentimentMap.has(brandKey)) {
               brandSentimentMap.set(brandKey, {
@@ -218,16 +231,16 @@ const resolvers = {
                 total: 0
               });
             }
-            
+
             const sentimentData = brandSentimentMap.get(brandKey);
             sentimentData.total++;
             if (brand.sentiment === 'positive') sentimentData.positive++;
             else if (brand.sentiment === 'negative') sentimentData.negative++;
             else sentimentData.notDetermined++;
-            
+
             // Track share of voice
             shareOfVoiceMap.set(brandKey, (shareOfVoiceMap.get(brandKey) || 0) + 1);
-            
+
             // Track own brand mentions
             if (brand.type === 'own') {
               ownBrandMentions++;
