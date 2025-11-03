@@ -17,8 +17,7 @@ module.exports = async function processOpenAIBatchNotification(job, done) {
 
     let batch = await workspaceDb.collection('batches').findOne({
       batchId: batchId,
-      provider: 'openai',
-      status: { $in: ['submitted', 'processing', 'validating', 'in_progress'] }
+      provider: 'openai'
     });
 
     if (!batch) {
