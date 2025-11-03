@@ -37,12 +37,6 @@ async function createBrand(parent, args, { user }) {
       throw new Error('User not authorized to create brands');
     }
 
-    // Check entitlements - can user create another brand?
-    const canCreate = await canPerformAction(workspaceId || workspaceSlug, 'createBrand');
-    if (!canCreate.allowed) {
-      throw new Error(`Cannot create brand: ${canCreate.reason}`);
-    }
-
     // Get the workspace-specific model
     const BrandModel = Brand(workspaceId || workspaceSlug);
 
@@ -55,6 +49,13 @@ async function createBrand(parent, args, { user }) {
 
       if (existingOwnBrand) {
         throw new Error('Only one own brand is allowed per workspace');
+      }
+      // Own brand doesn't count toward brand limit, so skip entitlement check
+    } else {
+      // Check entitlements - can user create another competitor brand?
+      const canCreate = await canPerformAction(workspaceId || workspaceSlug, 'createBrand');
+      if (!canCreate.allowed) {
+        throw new Error(`Cannot create brand: ${canCreate.reason}`);
       }
     }
 
