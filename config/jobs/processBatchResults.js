@@ -187,16 +187,20 @@ Include ALL brands in the array. Return JSON only:`;
             const sentimentConfig = getModelConfig('gemini-2.5-flash', 'sentiment');
             const analysisResult = await googleProvider.generateText('gemini-2.5-flash', analysisPrompt, sentimentConfig);
 
+            console.log(`📊 Gemini sentiment response:`, analysisResult.response.substring(0, 500));
+
             // Parse sentiment data
             let sentimentData;
             try {
               const jsonMatch = analysisResult.response.match(/\{[\s\S]*\}/);
               if (jsonMatch) {
                 sentimentData = JSON.parse(jsonMatch[0]);
+                console.log(`✓ Parsed sentiment data - brands:`, sentimentData.brands?.length || 0);
               } else {
                 throw new Error('No JSON found in response');
               }
             } catch (parseError) {
+              console.warn(`⚠️  Failed to parse sentiment JSON:`, parseError.message);
               sentimentData = {
                 brands: allBrands.map(brand => ({
                   brandKeywords: brand.name,
