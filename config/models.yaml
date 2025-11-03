@@ -10,7 +10,7 @@ models:
     allowedInBatchJobs: true
     processByBatch: true
     suggestedUpgrade: null
-  - modelId: claude-3-5-haiku-20241022
+  - modelId: claude-3-5-haiku@20241022
     name: Claude 3.5 Haiku
     provider: google
     description: Fast and cost-effective Claude model
@@ -43,8 +43,19 @@ models:
     allowedInBatchJobs: true
     suggestedUpgrade: null
     processByBatch: true
-  - modelId: claude-3-5-sonnet-20241022
-    name: Claude 3.5 Sonnet
+  - modelId: claude-sonnet-4-5@20250929
+    name: Claude Sonnet 4.5
+    provider: google
+    description: Latest Claude Sonnet model with enhanced capabilities
+    costTier: Professional
+    costPerQueryUSD: 13.84
+    showInUI: true
+    isSelectable: true
+    allowedInBatchJobs: true
+    suggestedUpgrade: null
+    processByBatch: true
+  - modelId: claude-3-5-sonnet-v2@20241022
+    name: Claude 3.5 Sonnet v2
     provider: google
     description: Balanced Claude model for most use cases
     costTier: Professional
@@ -52,7 +63,7 @@ models:
     showInUI: true
     isSelectable: true
     allowedInBatchJobs: true
-    suggestedUpgrade: null
+    suggestedUpgrade: claude-sonnet-4-5@20250929
     processByBatch: true
   - modelId: gemini-2.5-pro
     name: Gemini 2.5 Pro
@@ -77,7 +88,7 @@ models:
     suggestedUpgrade: null
     warning: Very expensive - limit to 1 per Medium plan
     processByBatch: true
-  - modelId: claude-haiku-4-5
+  - modelId: claude-haiku-4.5@20251001
     name: Claude Haiku 4.5
     provider: google
     description: Latest Claude Haiku model
