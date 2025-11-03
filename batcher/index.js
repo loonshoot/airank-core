@@ -142,11 +142,35 @@ async function initializeJobs() {
     
     // Start agenda once all jobs are registered
     await agenda.start();
+
+    // Schedule recurring jobs if they don't exist (self-healing)
+    await scheduleRecurringJobs();
+
     console.log('Batcher Ready');
-    
+
   } catch (error) {
     console.error('Error initializing jobs:', error);
     process.exit(1);
+  }
+}
+
+// Schedule recurring jobs on startup (self-healing)
+async function scheduleRecurringJobs() {
+  try {
+    console.log('Checking for recurring jobs to schedule...');
+
+    // pollOpenAIBatches - runs every 5 minutes to check for completed OpenAI batches
+    const existingPollJob = await agenda.jobs({ name: 'pollOpenAIBatches' });
+
+    if (existingPollJob.length === 0) {
+      console.log('  📅 Scheduling pollOpenAIBatches (every 5 minutes)');
+      await agenda.every('5 minutes', 'pollOpenAIBatches');
+    } else {
+      console.log('  ✓ pollOpenAIBatches already scheduled');
+    }
+
+  } catch (error) {
+    console.error('Error scheduling recurring jobs:', error);
   }
 }
 
