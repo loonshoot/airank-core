@@ -165,27 +165,40 @@ module.exports = async function processBatchResults(job, done) {
 
             const analysisPrompt = `Analyze this text for brand mentions and sentiment. Return ONLY valid JSON.
 
-Brands to check: ${allBrands.map(b => `${b.name} (${b.type})`).join(', ')}
+AVAILABLE BRANDS (use these EXACT values):
+${allBrands.map(b => `- ${b.name} (${b.type})`).join('\n')}
 
-Text: "${responseText}"
+Text to analyze: "${responseText}"
 
-CRITICAL BRAND NORMALIZATION RULES:
-1. The "brandKeywords" field MUST use ONLY the EXACT brand names from the list above
-2. DO NOT include product names, card names, or descriptive additions (e.g., "NAB Rewards Signature Card" → "NAB")
-3. Aggregate ALL variations of a brand to the single provided name:
-   - "Commonwealth Bank", "CBA", "Commonwealth Bank Ultimate Awards Card" → use "Commbank" (if "Commbank" is in the list)
-   - "National Australia Bank", "NAB", "NAB Rewards", "NAB Signature" → use "NAB" (if "NAB" is in the list)
-   - "ANZ Black", "ANZ Black Credit Card", "ANZ Bank" → use "ANZ" (if "ANZ" is in the list)
-   - "Westpac Altitude", "Westpac Altitude Black Card" → use "Westpac" (if "Westpac" is in the list)
-4. If ANY form of a brand is mentioned (full name, abbreviation, or with product details), map it to the provided brand name
-5. NEVER create new brand variations - use ONLY the exact names from the list above
-6. If a brand mentioned is NOT semantically equivalent to any provided brand, do NOT include it
+CRITICAL RULES - READ CAREFULLY:
+1. "brandKeywords" must be a SINGLE brand name from the list above - NOT a comma-separated list
+2. If the text says "Commonwealth Bank" or "CBA" or "CommBank App", use ONLY "Commbank" (if that's in the list)
+3. DO NOT write: "Commonwealth Bank, CBA, CommBank" ❌
+4. DO write: "Commbank" ✅
 
-JSON format:
+WRONG EXAMPLE:
+{
+  "brandKeywords": "Commonwealth Bank, CBA, CommBank App",  ❌ WRONG - multiple values
+  "mentioned": true
+}
+
+CORRECT EXAMPLE:
+{
+  "brandKeywords": "Commbank",  ✅ CORRECT - single exact value from list
+  "mentioned": true
+}
+
+BRAND NORMALIZATION:
+- Text mentions "Commonwealth Bank" or "CBA" or "CommBank Ultimate" → use "Commbank"
+- Text mentions "National Australia Bank" or "NAB Rewards" → use "NAB"
+- Text mentions "ANZ Black Credit Card" → use "ANZ"
+- Text mentions "Westpac Altitude" → use "Westpac"
+
+JSON Response Format:
 {
     "brands": [
         {
-            "brandKeywords": "string (EXACT brand name from list - no variations allowed)",
+            "brandKeywords": "single_brand_name_from_list",
             "type": "own"|"competitor",
             "mentioned": boolean,
             "sentiment": "positive"|"negative"|"not-determined"
@@ -194,7 +207,7 @@ JSON format:
     "overallSentiment": "positive"|"negative"|"not-determined"
 }
 
-Include ALL brands from the provided list in the array. Return JSON only:`;
+Return JSON only. Include ALL brands from the list, using their EXACT names:`;
 
             const sentimentConfig = getModelConfig('gemini-2.5-flash', 'sentiment');
             const analysisResult = await googleProvider.generateText('gemini-2.5-flash', analysisPrompt, sentimentConfig);
