@@ -22,17 +22,23 @@ Brands to check: ${allBrands.map(b => `${b.name} (${b.type})`).join(', ')}
 
 Text: "${modelResult.response}"
 
-IMPORTANT INSTRUCTIONS:
-1. In the "brandKeywords" field, use ONLY the EXACT brand names provided above (e.g., if "NAB" is provided, use "NAB", not "NAB (National Australia Bank)" or "National Australia Bank (NAB)")
-2. When you detect a brand mention with a variation (e.g., "National Australia Bank" or "NAB (National Australia Bank)"), normalize it to the exact brand name provided if they are semantically the same
-3. If a brand mentioned in the text is NOT semantically equivalent to any of the provided brands, do NOT include it in the results
-4. ONLY return brands from the provided list above
+CRITICAL BRAND NORMALIZATION RULES:
+1. The "brandKeywords" field MUST use ONLY the EXACT brand names from the list above
+2. DO NOT include product names, card names, or descriptive additions (e.g., "NAB Rewards Signature Card" → "NAB")
+3. Aggregate ALL variations of a brand to the single provided name:
+   - "Commonwealth Bank", "CBA", "Commonwealth Bank Ultimate Awards Card" → use "Commbank" (if "Commbank" is in the list)
+   - "National Australia Bank", "NAB", "NAB Rewards", "NAB Signature" → use "NAB" (if "NAB" is in the list)
+   - "ANZ Black", "ANZ Black Credit Card", "ANZ Bank" → use "ANZ" (if "ANZ" is in the list)
+   - "Westpac Altitude", "Westpac Altitude Black Card" → use "Westpac" (if "Westpac" is in the list)
+4. If ANY form of a brand is mentioned (full name, abbreviation, or with product details), map it to the provided brand name
+5. NEVER create new brand variations - use ONLY the exact names from the list above
+6. If a brand mentioned is NOT semantically equivalent to any provided brand, do NOT include it
 
 JSON format:
 {
     "brands": [
         {
-            "brandKeywords": "string (MUST be exact brand name from the list above)",
+            "brandKeywords": "string (EXACT brand name from list - no variations allowed)",
             "type": "own"|"competitor",
             "mentioned": boolean,
             "sentiment": "positive"|"negative"|"not-determined"
