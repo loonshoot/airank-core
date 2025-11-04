@@ -39,12 +39,19 @@ async function deleteBrand(parent, args, { user }) {
     // Get the workspace-specific model
     const BrandModel = Brand(workspaceId || workspaceSlug);
 
-    // Delete the brand
-    const deletedBrand = await BrandModel.findByIdAndDelete(id);
+    // First, check if this is the own brand
+    const brandToDelete = await BrandModel.findById(id);
 
-    if (!deletedBrand) {
+    if (!brandToDelete) {
       throw new Error('Brand not found');
     }
+
+    if (brandToDelete.isOwnBrand === true) {
+      throw new Error('Cannot delete primary brand. You can only change it by updating the brand details.');
+    }
+
+    // Delete the brand
+    const deletedBrand = await BrandModel.findByIdAndDelete(id);
 
     // Get remaining brands
     const remainingBrands = await BrandModel.find({ workspaceId: workspaceId || workspaceSlug });
