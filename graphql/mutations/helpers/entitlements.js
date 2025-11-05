@@ -142,6 +142,8 @@ async function getEntitlements(workspaceId) {
     modelsLimit: effectiveProfile.modelsLimit,
     allowedModels: effectiveProfile.allowedModels || [],
 
+    jobFrequency: effectiveProfile.jobFrequency || 'monthly',
+
     paymentExpired,
   };
 }

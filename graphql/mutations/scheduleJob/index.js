@@ -63,20 +63,28 @@ async function scheduleJobMutation(parent, args, { user }) {
                   await job.save();
 
                   // For promptModelTester jobs, also create a separate recurring job
-                  if (isPromptModelTester && repeatInterval) {
-                    console.log(`Creating recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
-                    const recurringJob = await agenda.create(jobArgs.name, jobArgs.data);
-                    await recurringJob.repeatEvery(repeatInterval, { skipImmediate: true });
-                    await recurringJob.save();
-                    console.log(`Set up recurring job with interval: ${repeatInterval}`);
+                  if (isPromptModelTester) {
+                    if (repeatInterval) {
+                      console.log(`Creating recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
+                      const recurringJob = await agenda.create(jobArgs.name, jobArgs.data);
+                      await recurringJob.repeatEvery(repeatInterval, { skipImmediate: true });
+                      await recurringJob.save();
+                      console.log(`Set up recurring job with interval: ${repeatInterval}`);
+                    } else {
+                      console.error(`❌ ERROR: Failed to create recurring job for promptModelTester - repeatInterval is null/undefined. Entitlements: ${JSON.stringify(entitlements)}`);
+                    }
                   }
                 } else if (jobArgs.schedule) {
                   job = await agenda.schedule(jobArgs.schedule, jobArgs.name, jobArgs.data);
 
                   // For promptModelTester jobs, also set up recurring schedule
-                  if (isPromptModelTester && repeatInterval) {
-                    await job.repeatEvery(repeatInterval, { skipImmediate: true });
-                    console.log(`Set up recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
+                  if (isPromptModelTester) {
+                    if (repeatInterval) {
+                      await job.repeatEvery(repeatInterval, { skipImmediate: true });
+                      console.log(`Set up recurring ${entitlements.jobFrequency} schedule for promptModelTester`);
+                    } else {
+                      console.error(`❌ ERROR: Failed to set up recurring schedule for promptModelTester - repeatInterval is null/undefined. Entitlements: ${JSON.stringify(entitlements)}`);
+                    }
                   }
 
                   await job.save();
