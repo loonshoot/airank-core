@@ -14,6 +14,10 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
   const location = process.env.GCP_REGION || 'us-central1';
   const bucketName = process.env.GCS_BATCH_BUCKET;
 
+  console.log(`🚀 [Vertex AI Batch] Starting submission for workspace ${workspaceId}`);
+  console.log(`📊 [Vertex AI Batch] Request count: ${requests.length}`);
+  console.log(`🌍 [Vertex AI Batch] Project: ${projectId}, Region: ${location}`);
+
   const storage = new Storage({
     projectId: projectId
   });
@@ -26,6 +30,9 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
   const firstModel = requests[0]?.model || '';
   const isClaudeModel = firstModel.includes('claude');
   const isGeminiModel = firstModel.includes('gemini');
+
+  console.log(`🤖 [Vertex AI Batch] Model type: ${isClaudeModel ? 'Claude' : isGeminiModel ? 'Gemini' : 'Unknown'}`);
+  console.log(`🤖 [Vertex AI Batch] First model: ${firstModel}`);
 
   // Create JSONL content for Vertex AI batch format
   const jsonlContent = requests.map(req => {
@@ -57,17 +64,25 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
   const inputFileName = `batches/input/${workspaceId}/${timestamp}-input.jsonl`;
   const outputPrefix = `batches/output/${workspaceId}/${timestamp}/`;
 
+  console.log(`📤 [Vertex AI Batch] Uploading to GCS: gs://${bucketName}/${inputFileName}`);
+
   const bucket = storage.bucket(bucketName);
   const file = bucket.file(inputFileName);
 
-  await file.save(jsonlContent, {
-    contentType: 'application/jsonl',
-    metadata: {
-      workspaceId: workspaceId
-    }
-  });
-
-  console.log(`✓ Uploaded input file to gs://${bucketName}/${inputFileName}`);
+  try {
+    await file.save(jsonlContent, {
+      contentType: 'application/jsonl',
+      metadata: {
+        workspaceId: workspaceId
+      }
+    });
+    console.log(`✅ [Vertex AI Batch] File uploaded successfully (${jsonlContent.length} bytes)`);
+  } catch (error) {
+    console.error(`❌ [Vertex AI Batch] GCS upload failed for workspace ${workspaceId}`);
+    console.error(`❌ [Vertex AI Batch] Bucket: ${bucketName}, File: ${inputFileName}`);
+    console.error(`❌ [Vertex AI Batch] Error:`, error.message);
+    throw new Error(`GCS upload failed: ${error.message}`);
+  }
 
   // Map model ID to Vertex AI model name
   const modelMap = {
@@ -109,12 +124,35 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
     }
   };
 
-  const [operation] = await client.createBatchPredictionJob({
-    parent: `projects/${projectId}/locations/${location}`,
-    batchPredictionJob
-  });
+  console.log(`🔨 [Vertex AI Batch] Creating batch prediction job...`);
+  console.log(`🤖 [Vertex AI Batch] Model: ${publisher}/${vertexModelId}`);
 
-  const batchJobName = operation.name;
+  let operation, batchJobName;
+  try {
+    [operation] = await client.createBatchPredictionJob({
+      parent: `projects/${projectId}/locations/${location}`,
+      batchPredictionJob
+    });
+
+    batchJobName = operation.name;
+    console.log(`✅ [Vertex AI Batch] Batch job created successfully`);
+    console.log(`📋 [Vertex AI Batch] Job name: ${batchJobName}`);
+  } catch (error) {
+    console.error(`❌ [Vertex AI Batch] Batch creation failed for workspace ${workspaceId}`);
+    console.error(`❌ [Vertex AI Batch] Model: ${publisher}/${vertexModelId}`);
+    console.error(`❌ [Vertex AI Batch] Input: gs://${bucketName}/${inputFileName}`);
+    console.error(`❌ [Vertex AI Batch] Error:`, error.message);
+    if (error.details) {
+      console.error(`❌ [Vertex AI Batch] Details:`, error.details);
+    }
+    throw new Error(`Vertex AI batch creation failed: ${error.message}`);
+  }
+
+  // Validate batch job name format
+  if (!batchJobName || !batchJobName.includes('/batchPredictionJobs/')) {
+    console.error(`❌ [Vertex AI Batch] Invalid batch job name format: ${batchJobName}`);
+    throw new Error(`Invalid Vertex AI batch job name format: ${batchJobName}`);
+  }
 
   // Store batch metadata in MongoDB
   const batchDoc = {
@@ -142,9 +180,21 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
     }
   };
 
-  await workspaceDb.collection('batches').insertOne(batchDoc);
+  try {
+    console.log(`💾 [Vertex AI Batch] Storing batch document in MongoDB...`);
+    await workspaceDb.collection('batches').insertOne(batchDoc);
+    console.log(`✅ [Vertex AI Batch] Batch document stored with _id: ${batchDoc._id}`);
+  } catch (error) {
+    console.error(`❌ [Vertex AI Batch] Failed to store batch document in MongoDB`);
+    console.error(`❌ [Vertex AI Batch] Batch job name from Vertex: ${batchJobName}`);
+    console.error(`❌ [Vertex AI Batch] Error:`, error.message);
+    throw new Error(`Failed to store batch in MongoDB: ${error.message}`);
+  }
 
-  console.log(`✓ Vertex AI batch ${batchJobName} submitted with ${requests.length} requests`);
+  console.log(`✅ [Vertex AI Batch] Batch submission complete`);
+  console.log(`📋 [Vertex AI Batch] Batch job name: ${batchJobName}`);
+  console.log(`📋 [Vertex AI Batch] Document ID: ${batchDoc._id}`);
+  console.log(`📋 [Vertex AI Batch] Request count: ${requests.length}`);
 
   return {
     batchId: batchJobName,

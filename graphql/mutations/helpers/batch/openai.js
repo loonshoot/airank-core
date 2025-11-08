@@ -13,6 +13,9 @@ async function submitOpenAIBatch(requests, workspaceDb, workspaceId) {
     apiKey: process.env.OPENAI_API_KEY
   });
 
+  console.log(`🚀 [OpenAI Batch] Starting submission for workspace ${workspaceId}`);
+  console.log(`📊 [OpenAI Batch] Request count: ${requests.length}`);
+
   // Create JSONL content
   const jsonlContent = requests.map(req => JSON.stringify({
     custom_id: req.custom_id,
@@ -25,23 +28,55 @@ async function submitOpenAIBatch(requests, workspaceDb, workspaceId) {
     }
   })).join('\n');
 
-  // Upload file to OpenAI
-  // Convert Buffer to File object for OpenAI SDK v4
-  const buffer = Buffer.from(jsonlContent, 'utf-8');
-  const file = await openai.files.create({
-    file: new File([buffer], 'batch.jsonl', { type: 'application/jsonl' }),
-    purpose: 'batch'
-  });
-
-  // Create batch job
-  const batch = await openai.batches.create({
-    input_file_id: file.id,
-    endpoint: '/v1/chat/completions',
-    completion_window: '24h',
-    metadata: {
-      workspace_id: workspaceId
+  let file;
+  try {
+    // Upload file to OpenAI
+    // Convert Buffer to File object for OpenAI SDK v4
+    console.log(`📤 [OpenAI Batch] Uploading batch file (${jsonlContent.length} bytes)...`);
+    const buffer = Buffer.from(jsonlContent, 'utf-8');
+    file = await openai.files.create({
+      file: new File([buffer], 'batch.jsonl', { type: 'application/jsonl' }),
+      purpose: 'batch'
+    });
+    console.log(`✅ [OpenAI Batch] File uploaded successfully: ${file.id}`);
+  } catch (error) {
+    console.error(`❌ [OpenAI Batch] File upload failed for workspace ${workspaceId}`);
+    console.error(`❌ [OpenAI Batch] Error:`, error.message);
+    if (error.response) {
+      console.error(`❌ [OpenAI Batch] Response:`, JSON.stringify(error.response.data, null, 2));
     }
-  });
+    throw new Error(`OpenAI file upload failed: ${error.message}`);
+  }
+
+  let batch;
+  try {
+    // Create batch job
+    console.log(`🔨 [OpenAI Batch] Creating batch job with file ${file.id}...`);
+    batch = await openai.batches.create({
+      input_file_id: file.id,
+      endpoint: '/v1/chat/completions',
+      completion_window: '24h',
+      metadata: {
+        workspace_id: workspaceId
+      }
+    });
+    console.log(`✅ [OpenAI Batch] Batch created successfully: ${batch.id}`);
+    console.log(`📋 [OpenAI Batch] Status: ${batch.status}`);
+  } catch (error) {
+    console.error(`❌ [OpenAI Batch] Batch creation failed for workspace ${workspaceId}`);
+    console.error(`❌ [OpenAI Batch] File ID was: ${file.id}`);
+    console.error(`❌ [OpenAI Batch] Error:`, error.message);
+    if (error.response) {
+      console.error(`❌ [OpenAI Batch] Response:`, JSON.stringify(error.response.data, null, 2));
+    }
+    throw new Error(`OpenAI batch creation failed: ${error.message}`);
+  }
+
+  // Validate batch ID format
+  if (!batch.id || !batch.id.startsWith('batch_')) {
+    console.error(`❌ [OpenAI Batch] Invalid batch ID format received: ${batch.id}`);
+    throw new Error(`Invalid OpenAI batch ID format: ${batch.id}`);
+  }
 
   // Store batch metadata in MongoDB
   const batchDoc = {
@@ -68,9 +103,21 @@ async function submitOpenAIBatch(requests, workspaceDb, workspaceId) {
     }
   };
 
-  await workspaceDb.collection('batches').insertOne(batchDoc);
+  try {
+    console.log(`💾 [OpenAI Batch] Storing batch document in MongoDB...`);
+    await workspaceDb.collection('batches').insertOne(batchDoc);
+    console.log(`✅ [OpenAI Batch] Batch document stored with _id: ${batchDoc._id}`);
+  } catch (error) {
+    console.error(`❌ [OpenAI Batch] Failed to store batch document in MongoDB`);
+    console.error(`❌ [OpenAI Batch] Batch ID from OpenAI: ${batch.id}`);
+    console.error(`❌ [OpenAI Batch] Error:`, error.message);
+    throw new Error(`Failed to store batch in MongoDB: ${error.message}`);
+  }
 
-  console.log(`✓ OpenAI batch ${batch.id} submitted with ${requests.length} requests`);
+  console.log(`✅ [OpenAI Batch] Batch submission complete`);
+  console.log(`📋 [OpenAI Batch] Batch ID: ${batch.id}`);
+  console.log(`📋 [OpenAI Batch] Document ID: ${batchDoc._id}`);
+  console.log(`📋 [OpenAI Batch] Request count: ${requests.length}`);
 
   return {
     batchId: batch.id,
