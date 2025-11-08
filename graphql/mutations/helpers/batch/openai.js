@@ -62,6 +62,8 @@ async function submitOpenAIBatch(requests, workspaceDb, workspaceId) {
     });
     console.log(`✅ [OpenAI Batch] Batch created successfully: ${batch.id}`);
     console.log(`📋 [OpenAI Batch] Status: ${batch.status}`);
+    console.log(`🔍 [OpenAI Batch] Full API response:`, JSON.stringify(batch, null, 2));
+    console.log(`🔍 [OpenAI Batch] Batch object type:`, typeof batch, batch.constructor.name);
   } catch (error) {
     console.error(`❌ [OpenAI Batch] Batch creation failed for workspace ${workspaceId}`);
     console.error(`❌ [OpenAI Batch] File ID was: ${file.id}`);
