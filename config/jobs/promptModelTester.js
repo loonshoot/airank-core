@@ -415,17 +415,43 @@ module.exports = async function promptModelTester(job, done) {
             // Get workspace database for batch storage
             const workspaceDb = workspaceConnection.db;
 
-            // Submit batch jobs for each provider
-            for (const [provider, models] of Object.entries(modelsByProvider)) {
-                if (models.length === 0) continue;
+            // OpenAI: Create separate batch per model (OpenAI requirement)
+            // Vertex AI: Can batch multiple models together
+            const openaiModels = modelsByProvider.openai;
+            const vertexModels = modelsByProvider.vertex;
 
-                console.log(`📦 Preparing ${provider} batch with ${models.length} models × ${prompts.length} prompts = ${models.length * prompts.length} requests`);
+            // Submit OpenAI batches (one per model)
+            for (const model of openaiModels) {
+                console.log(`📦 Preparing openai batch for ${model.id} with ${prompts.length} prompts = ${prompts.length} requests`);
 
-                // Create batch requests
                 const batchRequests = [];
-
                 for (const prompt of prompts) {
-                    for (const model of models) {
+                    const customId = `${workspaceId}-${prompt._id}-${model.id}-${Date.now()}`;
+
+                    batchRequests.push({
+                        custom_id: customId,
+                        model: model.id,
+                        messages: [
+                            { role: 'user', content: prompt.phrase }
+                        ]
+                    });
+                }
+
+                try {
+                    const batchResult = await submitBatch('openai', batchRequests, workspaceDb, workspaceId);
+                    console.log(`✓ Submitted openai batch: ${batchResult.batchId} (${batchResult.requestCount} requests)`);
+                } catch (error) {
+                    console.error(`✗ Failed to submit openai batch for ${model.id}:`, error.message);
+                }
+            }
+
+            // Submit Vertex AI batch (can include multiple models)
+            if (vertexModels.length > 0) {
+                console.log(`📦 Preparing vertex batch with ${vertexModels.length} models × ${prompts.length} prompts = ${vertexModels.length * prompts.length} requests`);
+
+                const batchRequests = [];
+                for (const prompt of prompts) {
+                    for (const model of vertexModels) {
                         const customId = `${workspaceId}-${prompt._id}-${model.id}-${Date.now()}`;
 
                         batchRequests.push({
@@ -439,10 +465,10 @@ module.exports = async function promptModelTester(job, done) {
                 }
 
                 try {
-                    const batchResult = await submitBatch(provider, batchRequests, workspaceDb, workspaceId);
-                    console.log(`✓ Submitted ${provider} batch: ${batchResult.batchId} (${batchResult.requestCount} requests)`);
+                    const batchResult = await submitBatch('vertex', batchRequests, workspaceDb, workspaceId);
+                    console.log(`✓ Submitted vertex batch: ${batchResult.batchId} (${batchResult.requestCount} requests)`);
                 } catch (error) {
-                    console.error(`✗ Failed to submit ${provider} batch:`, error.message);
+                    console.error(`✗ Failed to submit vertex batch:`, error.message);
                 }
             }
 
