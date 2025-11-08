@@ -117,19 +117,34 @@ module.exports = async function processBatchResults(job, done) {
         let responseText = '';
         let tokensUsed = 0;
 
-        if (result.response && result.response.body) {
-          const body = result.response.body;
+        if (result.response) {
+          // OpenAI format: result.response.body.choices
+          if (result.response.body) {
+            const body = result.response.body;
 
-          if (body.choices && body.choices.length > 0) {
-            responseText = body.choices[0].message?.content || body.choices[0].text || '';
-          } else if (body.candidates && body.candidates.length > 0) {
-            // Gemini format
-            responseText = body.candidates[0].content?.parts?.[0]?.text || '';
+            if (body.choices && body.choices.length > 0) {
+              responseText = body.choices[0].message?.content || body.choices[0].text || '';
+            } else if (body.candidates && body.candidates.length > 0) {
+              // Gemini format (if wrapped in body)
+              responseText = body.candidates[0].content?.parts?.[0]?.text || '';
+            }
+
+            // Extract token usage
+            if (body.usage) {
+              tokensUsed = body.usage.total_tokens || 0;
+            }
           }
+          // Vertex AI format: result.response.candidates (no body wrapper)
+          else if (result.response.candidates && result.response.candidates.length > 0) {
+            const candidate = result.response.candidates[0];
+            if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+              responseText = candidate.content.parts[0].text || '';
+            }
 
-          // Extract token usage
-          if (body.usage) {
-            tokensUsed = body.usage.total_tokens || 0;
+            // Extract token usage from Vertex AI format
+            if (result.response.usageMetadata) {
+              tokensUsed = result.response.usageMetadata.totalTokenCount || 0;
+            }
           }
         }
 
