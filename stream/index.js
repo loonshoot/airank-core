@@ -71,6 +71,7 @@ app.post('/webhooks/batch', async (req, res) => {
     // This keeps the stream service lightweight and fast
     const gcsUri = `gs://${bucket}/${fileName}`;
     const notification = {
+      provider: 'vertex', // GCS notifications are for Vertex AI batches
       gcsUri,
       bucket,
       fileName,
