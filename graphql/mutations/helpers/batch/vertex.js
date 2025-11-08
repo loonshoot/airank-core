@@ -1,6 +1,6 @@
 const { Storage } = require('@google-cloud/storage');
 const { JobServiceClient } = require('@google-cloud/aiplatform').v1;
-const { ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
 
 /**
  * Submit a batch job for Claude or Gemini via Vertex AI
@@ -156,7 +156,7 @@ async function submitVertexBatch(requests, workspaceDb, workspaceId) {
 
   // Store batch metadata in MongoDB
   const batchDoc = {
-    _id: new ObjectId(),
+    _id: new mongoose.Types.ObjectId(),
     workspaceId: workspaceId,
     batchId: batchJobName,
     provider: 'vertex', // Using Vertex AI for both Claude and Gemini
