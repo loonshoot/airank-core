@@ -73,6 +73,7 @@ const typeDefs = gql`
     resultsWithSentiment: Int!
     dateRange: DateRange!
     ownBrandMentionPercentage: Float!
+    exclusivityRate: Float!
   }
 
   type DateRange {
@@ -82,14 +83,52 @@ const typeDefs = gql`
 
   type MentionsByModel {
     modelName: String!
-    mentionCount: Int!
-    percentage: Float!
+    ownBrandMentions: Int!
+    competitorMentions: Int!
+    totalMentions: Int!
+    ownBrandPercentage: Float!
   }
 
   type PromptPerformance {
     prompt: String!
     winCount: Int!
     percentage: Float!
+  }
+
+  type CoMention {
+    brandName: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type CoMentionAnalysis {
+    brandName: String!
+    coMentions: [CoMention!]!
+  }
+
+  type BrandPositionAnalysis {
+    brandName: String!
+    brandType: String!
+    averagePosition: Float!
+    firstMentions: Int!
+    totalMentions: Int!
+  }
+
+  type SentimentTrend {
+    date: String!
+    positive: Int!
+    negative: Int!
+    neutral: Int!
+    positivePercentage: Float!
+  }
+
+  type CompetitiveBreakdown {
+    brandName: String!
+    brandType: String!
+    sentimentGap: Float!
+    averagePosition: Float!
+    positivePercentage: Float!
+    mentionCount: Int!
   }
 
   type AnalyticsData {
@@ -100,6 +139,10 @@ const typeDefs = gql`
     mentionsByModel: [MentionsByModel!]!
     ownBrandPromptPerformance: [PromptPerformance!]!
     competitorPromptPerformance: [PromptPerformance!]!
+    coMentionAnalysis: [CoMentionAnalysis!]!
+    brandPositionAnalysis: [BrandPositionAnalysis!]!
+    sentimentTrend: [SentimentTrend!]!
+    competitiveBreakdown: [CompetitiveBreakdown!]!
   }
 `;
 
@@ -171,14 +214,19 @@ const resolvers = {
               start: formatDate(start),
               end: formatDate(end)
             },
-            ownBrandMentionPercentage: 0
+            ownBrandMentionPercentage: 0,
+            exclusivityRate: 0
           },
           dailyMentions: [],
           brandSentiments: [],
           shareOfVoice: [],
           mentionsByModel: [],
           ownBrandPromptPerformance: [],
-          competitorPromptPerformance: []
+          competitorPromptPerformance: [],
+          coMentionAnalysis: [],
+          brandPositionAnalysis: [],
+          sentimentTrend: [],
+          competitiveBreakdown: []
         };
       }
 
@@ -195,9 +243,16 @@ const resolvers = {
 
       results.forEach(result => {
         const date = formatDate(new Date(result.createdAt));
-        
-        // Track mentions by model
-        mentionsByModelMap.set(result.modelName, (mentionsByModelMap.get(result.modelName) || 0) + 1);
+
+        // Track mentions by model with brand breakdown
+        if (!mentionsByModelMap.has(result.modelName)) {
+          mentionsByModelMap.set(result.modelName, {
+            ownBrandMentions: 0,
+            competitorMentions: 0,
+            totalMentions: 0
+          });
+        }
+        const modelData = mentionsByModelMap.get(result.modelName);
 
         // Initialize daily mentions for this date
         if (!dailyMentionsMap.has(date)) {
@@ -208,6 +263,14 @@ const resolvers = {
           // Only process brands that match the workspace's configured brands
           if (brand.mentioned && validBrandNames.has(brand.brandKeywords)) {
             const brandKey = `${brand.brandKeywords}-${brand.type}`;
+
+            // Track mentions by model with brand type
+            if (brand.type === 'own') {
+              modelData.ownBrandMentions++;
+            } else {
+              modelData.competitorMentions++;
+            }
+            modelData.totalMentions++;
 
             // Track prompt performance
             if (brand.type === 'own') {
@@ -284,12 +347,13 @@ const resolvers = {
       });
 
       // Convert mentions by model to array format
-      const totalModelMentions = Array.from(mentionsByModelMap.values()).reduce((sum, count) => sum + count, 0);
-      const mentionsByModel = Array.from(mentionsByModelMap.entries()).map(([modelName, count]) => ({
+      const mentionsByModel = Array.from(mentionsByModelMap.entries()).map(([modelName, data]) => ({
         modelName,
-        mentionCount: count,
-        percentage: totalModelMentions > 0 ? (count / totalModelMentions) * 100 : 0
-      })).sort((a, b) => b.mentionCount - a.mentionCount);
+        ownBrandMentions: data.ownBrandMentions,
+        competitorMentions: data.competitorMentions,
+        totalMentions: data.totalMentions,
+        ownBrandPercentage: data.totalMentions > 0 ? (data.ownBrandMentions / data.totalMentions) * 100 : 0
+      })).sort((a, b) => b.totalMentions - a.totalMentions);
       
       // Convert prompt performance to array format
       const totalOwnBrandWins = Array.from(ownBrandPromptPerformanceMap.values()).reduce((sum, count) => sum + count, 0);
@@ -306,6 +370,129 @@ const resolvers = {
         percentage: totalCompetitorWins > 0 ? (count / totalCompetitorWins) * 100 : 0
       })).sort((a, b) => b.winCount - a.winCount).slice(0, 5);
 
+      // Calculate exclusivity rate (responses where only own brand is mentioned)
+      let exclusiveOwnBrandCount = 0;
+      results.forEach(result => {
+        const mentionedBrands = result.sentimentAnalysis.brands.filter(b => b.mentioned && validBrandNames.has(b.brandKeywords));
+        const hasOwnBrand = mentionedBrands.some(b => b.type === 'own');
+        const hasOnlyOwnBrand = hasOwnBrand && mentionedBrands.every(b => b.type === 'own');
+        if (hasOnlyOwnBrand) {
+          exclusiveOwnBrandCount++;
+        }
+      });
+      const exclusivityRate = totalResults > 0 ? (exclusiveOwnBrandCount / totalResults) * 100 : 0;
+
+      // Calculate co-mention analysis
+      const coMentionMap = new Map();
+      const ownBrand = workspaceBrands.find(b => b.isOwnBrand);
+      if (ownBrand) {
+        results.forEach(result => {
+          const mentionedBrands = result.sentimentAnalysis.brands.filter(b =>
+            b.mentioned && validBrandNames.has(b.brandKeywords)
+          );
+          const hasOwnBrand = mentionedBrands.some(b => b.type === 'own' && b.brandKeywords === ownBrand.name);
+
+          if (hasOwnBrand) {
+            mentionedBrands.forEach(brand => {
+              if (brand.type === 'competitor') {
+                coMentionMap.set(brand.brandKeywords, (coMentionMap.get(brand.brandKeywords) || 0) + 1);
+              }
+            });
+          }
+        });
+      }
+
+      const ownBrandTotalMentions = shareOfVoiceMap.get(`${ownBrand?.name}-own`) || 1;
+      const coMentionAnalysis = ownBrand ? [{
+        brandName: ownBrand.name,
+        coMentions: Array.from(coMentionMap.entries()).map(([brandName, count]) => ({
+          brandName,
+          count,
+          percentage: (count / ownBrandTotalMentions) * 100
+        })).sort((a, b) => b.count - a.count)
+      }] : [];
+
+      // Calculate brand position analysis
+      const brandPositionMap = new Map();
+      results.forEach(result => {
+        const mentionedBrands = result.sentimentAnalysis.brands.filter(b =>
+          b.mentioned && validBrandNames.has(b.brandKeywords)
+        ).map(b => ({ ...b, brandKey: `${b.brandKeywords}-${b.type}` }));
+
+        // Assign positions based on order of appearance in response
+        mentionedBrands.forEach((brand, index) => {
+          if (!brandPositionMap.has(brand.brandKey)) {
+            brandPositionMap.set(brand.brandKey, {
+              brandName: brand.brandKeywords,
+              brandType: brand.type,
+              positions: [],
+              firstCount: 0,
+              totalCount: 0
+            });
+          }
+          const posData = brandPositionMap.get(brand.brandKey);
+          posData.positions.push(index + 1);
+          posData.totalCount++;
+          if (index === 0) posData.firstCount++;
+        });
+      });
+
+      const brandPositionAnalysis = Array.from(brandPositionMap.values()).map(data => ({
+        brandName: data.brandName,
+        brandType: data.brandType,
+        averagePosition: data.positions.reduce((sum, pos) => sum + pos, 0) / data.positions.length,
+        firstMentions: data.firstCount,
+        totalMentions: data.totalCount
+      })).sort((a, b) => a.averagePosition - b.averagePosition);
+
+      // Calculate sentiment trend over time
+      const sentimentTrendMap = new Map();
+      results.forEach(result => {
+        const date = formatDate(new Date(result.createdAt));
+        if (!sentimentTrendMap.has(date)) {
+          sentimentTrendMap.set(date, { positive: 0, negative: 0, neutral: 0, total: 0 });
+        }
+        const trendData = sentimentTrendMap.get(date);
+
+        result.sentimentAnalysis.brands.forEach(brand => {
+          if (brand.mentioned && brand.type === 'own' && validBrandNames.has(brand.brandKeywords)) {
+            trendData.total++;
+            if (brand.sentiment === 'positive') trendData.positive++;
+            else if (brand.sentiment === 'negative') trendData.negative++;
+            else trendData.neutral++;
+          }
+        });
+      });
+
+      const sentimentTrend = Array.from(sentimentTrendMap.entries())
+        .map(([date, data]) => ({
+          date,
+          positive: data.positive,
+          negative: data.negative,
+          neutral: data.neutral,
+          positivePercentage: data.total > 0 ? (data.positive / data.total) * 100 : 0
+        }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Calculate competitive breakdown
+      const ownBrandPositivity = brandSentiments.find(b => b.brandType === 'own')?.positivePercentage || 0;
+      const competitiveBreakdown = brandSentiments.map(brand => {
+        const positionData = brandPositionAnalysis.find(p => p.brandName === brand.brandName && p.brandType === brand.brandType);
+        return {
+          brandName: brand.brandName,
+          brandType: brand.brandType,
+          sentimentGap: brand.positivePercentage - ownBrandPositivity,
+          averagePosition: positionData?.averagePosition || 0,
+          positivePercentage: brand.positivePercentage,
+          mentionCount: brand.total
+        };
+      }).sort((a, b) => {
+        // Sort own brand first, then by sentiment gap
+        if (a.brandType === 'own') return -1;
+        if (b.brandType === 'own') return 1;
+        return b.sentimentGap - a.sentimentGap;
+      });
+
       return {
         summary: {
           totalResults,
@@ -314,14 +501,19 @@ const resolvers = {
             start: formatDate(start),
             end: formatDate(end)
           },
-          ownBrandMentionPercentage: totalResults > 0 ? (ownBrandMentions / totalResults) * 100 : 0
+          ownBrandMentionPercentage: totalResults > 0 ? (ownBrandMentions / totalResults) * 100 : 0,
+          exclusivityRate
         },
         dailyMentions,
         brandSentiments,
         shareOfVoice,
         mentionsByModel,
         ownBrandPromptPerformance,
-        competitorPromptPerformance
+        competitorPromptPerformance,
+        coMentionAnalysis,
+        brandPositionAnalysis,
+        sentimentTrend,
+        competitiveBreakdown
       };
 
     } catch (error) {

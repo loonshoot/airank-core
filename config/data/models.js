@@ -121,7 +121,8 @@ const PreviousModelResultSchema = new mongoose.Schema({
             brandKeywords: { type: String, required: true },
             type: { type: String, enum: ['own', 'competitor'], required: true },
             mentioned: { type: Boolean, default: false },
-            sentiment: { type: String, enum: ['positive', 'negative', 'not-determined'], default: 'not-determined' }
+            sentiment: { type: String, enum: ['positive', 'negative', 'not-determined'], default: 'not-determined' },
+            position: { type: Number, default: null } // Position in response (1=first, 2=second, etc.)
         }],
         overallSentiment: { type: String, enum: ['positive', 'negative', 'not-determined'], default: 'not-determined' },
         analyzedAt: { type: Date },

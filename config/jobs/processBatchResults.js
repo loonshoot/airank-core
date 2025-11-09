@@ -190,6 +190,7 @@ CRITICAL RULES - READ CAREFULLY:
 2. If the text says "Commonwealth Bank" or "CBA" or "CommBank App", use ONLY "Commbank" (if that's in the list)
 3. DO NOT write: "Commonwealth Bank, CBA, CommBank" ❌
 4. DO write: "Commbank" ✅
+5. For "position": if the brand is mentioned, indicate which order it appears in the text (1=first brand mentioned, 2=second, etc.). If not mentioned, use null.
 
 WRONG EXAMPLE:
 {
@@ -200,7 +201,8 @@ WRONG EXAMPLE:
 CORRECT EXAMPLE:
 {
   "brandKeywords": "Commbank",  ✅ CORRECT - single exact value from list
-  "mentioned": true
+  "mentioned": true,
+  "position": 1
 }
 
 BRAND NORMALIZATION:
@@ -209,6 +211,11 @@ BRAND NORMALIZATION:
 - Text mentions "ANZ Black Credit Card" → use "ANZ"
 - Text mentions "Westpac Altitude" → use "Westpac"
 
+POSITION EXAMPLES:
+- Text: "I recommend NAB and Westpac..." → NAB position=1, Westpac position=2
+- Text: "Westpac is great, also consider ANZ..." → Westpac position=1, ANZ position=2
+- Text: "For banking, Commbank, ANZ, and NAB..." → Commbank position=1, ANZ position=2, NAB position=3
+
 JSON Response Format:
 {
     "brands": [
@@ -216,7 +223,8 @@ JSON Response Format:
             "brandKeywords": "single_brand_name_from_list",
             "type": "own"|"competitor",
             "mentioned": boolean,
-            "sentiment": "positive"|"negative"|"not-determined"
+            "sentiment": "positive"|"negative"|"not-determined",
+            "position": number|null
         }
     ],
     "overallSentiment": "positive"|"negative"|"not-determined"
