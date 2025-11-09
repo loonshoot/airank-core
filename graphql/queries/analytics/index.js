@@ -419,7 +419,7 @@ const resolvers = {
           b.mentioned && validBrandNames.has(b.brandKeywords)
         ).map(b => ({ ...b, brandKey: `${b.brandKeywords}-${b.type}` }));
 
-        // Assign positions based on order of appearance in response
+        // Use actual position field from sentiment analysis, fallback to index for old data
         mentionedBrands.forEach((brand, index) => {
           if (!brandPositionMap.has(brand.brandKey)) {
             brandPositionMap.set(brand.brandKey, {
@@ -431,19 +431,23 @@ const resolvers = {
             });
           }
           const posData = brandPositionMap.get(brand.brandKey);
-          posData.positions.push(index + 1);
+          const position = brand.position || (index + 1); // Use actual position or fallback to index
+          posData.positions.push(position);
           posData.totalCount++;
-          if (index === 0) posData.firstCount++;
+          if (position === 1) posData.firstCount++;
         });
       });
 
-      const brandPositionAnalysis = Array.from(brandPositionMap.values()).map(data => ({
-        brandName: data.brandName,
-        brandType: data.brandType,
-        averagePosition: data.positions.reduce((sum, pos) => sum + pos, 0) / data.positions.length,
-        firstMentions: data.firstCount,
-        totalMentions: data.totalCount
-      })).sort((a, b) => a.averagePosition - b.averagePosition);
+      const brandPositionAnalysis = Array.from(brandPositionMap.values())
+        .filter(data => data.brandName && data.positions.length > 0) // Filter out invalid entries
+        .map(data => ({
+          brandName: data.brandName,
+          brandType: data.brandType,
+          averagePosition: data.positions.reduce((sum, pos) => sum + pos, 0) / data.positions.length,
+          firstMentions: data.firstCount,
+          totalMentions: data.totalCount
+        }))
+        .sort((a, b) => a.averagePosition - b.averagePosition);
 
       // Calculate sentiment trend over time
       const sentimentTrendMap = new Map();
