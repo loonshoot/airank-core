@@ -415,12 +415,21 @@ const resolvers = {
       // Calculate brand position analysis
       const brandPositionMap = new Map();
       results.forEach(result => {
+        if (!result.sentimentAnalysis || !result.sentimentAnalysis.brands) {
+          return; // Skip results without sentiment analysis
+        }
+
         const mentionedBrands = result.sentimentAnalysis.brands.filter(b =>
-          b.mentioned && validBrandNames.has(b.brandKeywords)
+          b && b.mentioned && b.brandKeywords && validBrandNames.has(b.brandKeywords)
         ).map(b => ({ ...b, brandKey: `${b.brandKeywords}-${b.type}` }));
 
         // Use actual position field from sentiment analysis, fallback to index for old data
         mentionedBrands.forEach((brand, index) => {
+          // Additional safety check
+          if (!brand.brandKeywords || !brand.type) {
+            return;
+          }
+
           if (!brandPositionMap.has(brand.brandKey)) {
             brandPositionMap.set(brand.brandKey, {
               brandName: brand.brandKeywords,
