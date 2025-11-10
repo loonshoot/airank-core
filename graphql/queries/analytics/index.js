@@ -448,7 +448,16 @@ const resolvers = {
       });
 
       const brandPositionAnalysis = Array.from(brandPositionMap.values())
-        .filter(data => data.brandName && data.positions.length > 0) // Filter out invalid entries
+        .filter(data => {
+          // Strict validation: must have brandName, brandType, and at least one position
+          return data &&
+                 data.brandName &&
+                 typeof data.brandName === 'string' &&
+                 data.brandName.trim().length > 0 &&
+                 data.brandType &&
+                 data.positions &&
+                 data.positions.length > 0;
+        })
         .map(data => ({
           brandName: data.brandName,
           brandType: data.brandType,
