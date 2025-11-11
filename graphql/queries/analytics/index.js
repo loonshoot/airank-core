@@ -195,7 +195,18 @@ const resolvers = {
     });
     const Brand = brandConnection.model('Brand', BrandSchema);
     const workspaceBrands = await Brand.find({});
-    const validBrandNames = new Set(workspaceBrands.map(b => b.name));
+
+    // Log brands for debugging
+    console.log('🏷️  Workspace brands:', workspaceBrands.map(b => ({ name: b.name, isOwnBrand: b.isOwnBrand })));
+
+    const validBrandNames = new Set(
+      workspaceBrands
+        .map(b => b.name)
+        .filter(name => name && typeof name === 'string' && name.trim().length > 0)
+    );
+
+    console.log('✅ Valid brand names Set:', Array.from(validBrandNames));
+
     await brandConnection.close();
 
     try {
