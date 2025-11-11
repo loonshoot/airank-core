@@ -450,13 +450,25 @@ const resolvers = {
       const brandPositionAnalysis = Array.from(brandPositionMap.values())
         .filter(data => {
           // Strict validation: must have brandName, brandType, and at least one position
-          return data &&
+          const isValid = data &&
                  data.brandName &&
                  typeof data.brandName === 'string' &&
                  data.brandName.trim().length > 0 &&
                  data.brandType &&
                  data.positions &&
                  data.positions.length > 0;
+
+          // Log invalid entries for debugging
+          if (!isValid && data) {
+            console.log('⚠️  Filtered out invalid brandPositionAnalysis entry:', {
+              brandName: data.brandName,
+              brandType: data.brandType,
+              hasPositions: !!data.positions,
+              positionsLength: data.positions?.length
+            });
+          }
+
+          return isValid;
         })
         .map(data => ({
           brandName: data.brandName,
@@ -466,6 +478,13 @@ const resolvers = {
           totalMentions: data.totalCount
         }))
         .sort((a, b) => a.averagePosition - b.averagePosition);
+
+      // Final safety check - log if we somehow still have null brandNames
+      brandPositionAnalysis.forEach((item, index) => {
+        if (!item.brandName) {
+          console.error(`🚨 NULL brandName at index ${index}:`, JSON.stringify(item));
+        }
+      });
 
       // Calculate sentiment trend over time
       const sentimentTrendMap = new Map();
