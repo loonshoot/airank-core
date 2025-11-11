@@ -490,12 +490,20 @@ const resolvers = {
         }))
         .sort((a, b) => a.averagePosition - b.averagePosition);
 
-      // Final safety check - log if we somehow still have null brandNames
+      // Final safety check - log the entire array and check for nulls
+      console.log('📊 brandPositionAnalysis array length:', brandPositionAnalysis.length);
+      console.log('📊 brandPositionAnalysis first 3 items:', brandPositionAnalysis.slice(0, 3));
+
       brandPositionAnalysis.forEach((item, index) => {
         if (!item.brandName) {
           console.error(`🚨 NULL brandName at index ${index}:`, JSON.stringify(item));
         }
       });
+
+      // CRITICAL: Remove any items that still have null brandName as absolute last resort
+      const safeBrandPositionAnalysis = brandPositionAnalysis.filter(item => item.brandName && item.brandName.trim().length > 0);
+
+      console.log('✅ After final filter:', safeBrandPositionAnalysis.length, 'items');
 
       // Calculate sentiment trend over time
       const sentimentTrendMap = new Map();
@@ -563,7 +571,7 @@ const resolvers = {
         ownBrandPromptPerformance,
         competitorPromptPerformance,
         coMentionAnalysis,
-        brandPositionAnalysis,
+        brandPositionAnalysis: safeBrandPositionAnalysis, // Use the filtered safe array
         sentimentTrend,
         competitiveBreakdown
       };
