@@ -425,14 +425,29 @@ const resolvers = {
 
       // Calculate brand position analysis
       const brandPositionMap = new Map();
-      results.forEach(result => {
+      console.log('📊 Processing', results.length, 'results for position analysis');
+
+      results.forEach((result, resultIndex) => {
         if (!result.sentimentAnalysis || !result.sentimentAnalysis.brands) {
+          console.log(`  ⚠️  Result ${resultIndex}: No sentiment analysis`);
           return; // Skip results without sentiment analysis
+        }
+
+        if (resultIndex < 3) {
+          console.log(`  📝 Result ${resultIndex}: ${result.sentimentAnalysis.brands.length} brands in sentiment analysis`);
+
+          result.sentimentAnalysis.brands.forEach((b, brandIndex) => {
+            console.log(`    Brand ${brandIndex}: brandKeywords="${b.brandKeywords}", mentioned=${b.mentioned}, inSet=${validBrandNames.has(b.brandKeywords)}, type=${b.type}`);
+          });
         }
 
         const mentionedBrands = result.sentimentAnalysis.brands.filter(b =>
           b && b.mentioned && b.brandKeywords && validBrandNames.has(b.brandKeywords)
         ).map(b => ({ ...b, brandKey: `${b.brandKeywords}-${b.type}` }));
+
+        if (resultIndex < 3) {
+          console.log(`  ✅ Result ${resultIndex}: ${mentionedBrands.length} mentioned brands after filter`);
+        }
 
         // Use actual position field from sentiment analysis, fallback to index for old data
         mentionedBrands.forEach((brand, index) => {
@@ -457,6 +472,8 @@ const resolvers = {
           if (position === 1) posData.firstCount++;
         });
       });
+
+      console.log('📊 brandPositionMap size after processing:', brandPositionMap.size);
 
       const brandPositionAnalysis = Array.from(brandPositionMap.values())
         .filter(data => {
