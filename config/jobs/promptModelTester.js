@@ -56,7 +56,7 @@ const runPromptAgainstModel = async (providers, prompt, model, workspaceId, Work
             promptId: prompt._id,
             modelId: modelId, // Store as string, not ObjectId
             prompt: prompt.phrase,
-            modelName: name,
+            modelName: modelId, // Use modelId (platform ID) instead of name (friendly name) for consistency
             provider,
             response: result.response,
             tokensUsed: result.tokensUsed,
