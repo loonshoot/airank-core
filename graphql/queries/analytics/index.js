@@ -453,12 +453,22 @@ const resolvers = {
 
         // Use actual position field from sentiment analysis, fallback to index for old data
         mentionedBrands.forEach((brand, index) => {
+          if (resultIndex < 3) {
+            console.log(`    Processing brand ${index}: brandKeywords="${brand.brandKeywords}", type="${brand.type}", brandKey="${brand.brandKey}"`);
+          }
+
           // Additional safety check
           if (!brand.brandKeywords || !brand.type) {
+            if (resultIndex < 3) {
+              console.log(`    ❌ Skipping brand ${index}: missing brandKeywords or type`);
+            }
             return;
           }
 
           if (!brandPositionMap.has(brand.brandKey)) {
+            if (resultIndex < 3) {
+              console.log(`    ➕ Adding new brand to map: ${brand.brandKey}`);
+            }
             brandPositionMap.set(brand.brandKey, {
               brandName: brand.brandKeywords,
               brandType: brand.type,
