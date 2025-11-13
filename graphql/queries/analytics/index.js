@@ -445,7 +445,14 @@ const resolvers = {
 
         const mentionedBrands = result.sentimentAnalysis.brands.filter(b =>
           b && b.mentioned && b.brandKeywords && validBrandNames.has(b.brandKeywords)
-        ).map(b => ({ ...b, brandKey: `${b.brandKeywords}-${b.type}` }));
+        ).map(b => ({
+          brandKeywords: b.brandKeywords,
+          type: b.type,
+          mentioned: b.mentioned,
+          sentiment: b.sentiment,
+          position: b.position,
+          brandKey: `${b.brandKeywords}-${b.type}`
+        }));
 
         if (resultIndex < 3) {
           console.log(`  ✅ Result ${resultIndex}: ${mentionedBrands.length} mentioned brands after filter`);
