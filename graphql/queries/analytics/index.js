@@ -196,16 +196,11 @@ const resolvers = {
     const Brand = brandConnection.model('Brand', BrandSchema);
     const workspaceBrands = await Brand.find({});
 
-    // Log brands for debugging
-    console.log('🏷️  Workspace brands:', workspaceBrands.map(b => ({ name: b.name, isOwnBrand: b.isOwnBrand })));
-
     const validBrandNames = new Set(
       workspaceBrands
         .map(b => b.name)
         .filter(name => name && typeof name === 'string' && name.trim().length > 0)
     );
-
-    console.log('✅ Valid brand names Set:', Array.from(validBrandNames));
 
     await brandConnection.close();
 
@@ -215,8 +210,6 @@ const resolvers = {
         createdAt: { $gte: start, $lte: end },
         'sentimentAnalysis.brands': { $exists: true, $ne: [] }
       }).sort({ createdAt: 1 });
-
-      console.log('🔍 Found', results.length, 'results with sentiment analysis in date range');
 
       if (results.length === 0) {
         return {
@@ -427,20 +420,10 @@ const resolvers = {
 
       // Calculate brand position analysis
       const brandPositionMap = new Map();
-      console.log('📊 Processing', results.length, 'results for position analysis');
 
-      results.forEach((result, resultIndex) => {
+      results.forEach(result => {
         if (!result.sentimentAnalysis || !result.sentimentAnalysis.brands) {
-          console.log(`  ⚠️  Result ${resultIndex}: No sentiment analysis`);
           return; // Skip results without sentiment analysis
-        }
-
-        if (resultIndex < 3) {
-          console.log(`  📝 Result ${resultIndex}: ${result.sentimentAnalysis.brands.length} brands in sentiment analysis`);
-
-          result.sentimentAnalysis.brands.forEach((b, brandIndex) => {
-            console.log(`    Brand ${brandIndex}: brandKeywords="${b.brandKeywords}", mentioned=${b.mentioned}, inSet=${validBrandNames.has(b.brandKeywords)}, type=${b.type}`);
-          });
         }
 
         const mentionedBrands = result.sentimentAnalysis.brands.filter(b =>
@@ -454,28 +437,14 @@ const resolvers = {
           brandKey: `${b.brandKeywords}-${b.type}`
         }));
 
-        if (resultIndex < 3) {
-          console.log(`  ✅ Result ${resultIndex}: ${mentionedBrands.length} mentioned brands after filter`);
-        }
-
         // Use actual position field from sentiment analysis, fallback to index for old data
         mentionedBrands.forEach((brand, index) => {
-          if (resultIndex < 3) {
-            console.log(`    Processing brand ${index}: brandKeywords="${brand.brandKeywords}", type="${brand.type}", brandKey="${brand.brandKey}"`);
-          }
-
           // Additional safety check
           if (!brand.brandKeywords || !brand.type) {
-            if (resultIndex < 3) {
-              console.log(`    ❌ Skipping brand ${index}: missing brandKeywords or type`);
-            }
             return;
           }
 
           if (!brandPositionMap.has(brand.brandKey)) {
-            if (resultIndex < 3) {
-              console.log(`    ➕ Adding new brand to map: ${brand.brandKey}`);
-            }
             brandPositionMap.set(brand.brandKey, {
               brandName: brand.brandKeywords,
               brandType: brand.type,
@@ -492,31 +461,16 @@ const resolvers = {
         });
       });
 
-      console.log('📊 brandPositionMap size after processing:', brandPositionMap.size);
-
       const brandPositionAnalysis = Array.from(brandPositionMap.values())
-        .filter(data => {
-          // Strict validation: must have brandName, brandType, and at least one position
-          const isValid = data &&
-                 data.brandName &&
-                 typeof data.brandName === 'string' &&
-                 data.brandName.trim().length > 0 &&
-                 data.brandType &&
-                 data.positions &&
-                 data.positions.length > 0;
-
-          // Log invalid entries for debugging
-          if (!isValid && data) {
-            console.log('⚠️  Filtered out invalid brandPositionAnalysis entry:', {
-              brandName: data.brandName,
-              brandType: data.brandType,
-              hasPositions: !!data.positions,
-              positionsLength: data.positions?.length
-            });
-          }
-
-          return isValid;
-        })
+        .filter(data =>
+          data &&
+          data.brandName &&
+          typeof data.brandName === 'string' &&
+          data.brandName.trim().length > 0 &&
+          data.brandType &&
+          data.positions &&
+          data.positions.length > 0
+        )
         .map(data => ({
           brandName: data.brandName,
           brandType: data.brandType,
@@ -525,21 +479,6 @@ const resolvers = {
           totalMentions: data.totalCount
         }))
         .sort((a, b) => a.averagePosition - b.averagePosition);
-
-      // Final safety check - log the entire array and check for nulls
-      console.log('📊 brandPositionAnalysis array length:', brandPositionAnalysis.length);
-      console.log('📊 brandPositionAnalysis first 3 items:', brandPositionAnalysis.slice(0, 3));
-
-      brandPositionAnalysis.forEach((item, index) => {
-        if (!item.brandName) {
-          console.error(`🚨 NULL brandName at index ${index}:`, JSON.stringify(item));
-        }
-      });
-
-      // CRITICAL: Remove any items that still have null brandName as absolute last resort
-      const safeBrandPositionAnalysis = brandPositionAnalysis.filter(item => item.brandName && item.brandName.trim().length > 0);
-
-      console.log('✅ After final filter:', safeBrandPositionAnalysis.length, 'items');
 
       // Calculate sentiment trend over time
       const sentimentTrendMap = new Map();
@@ -607,7 +546,7 @@ const resolvers = {
         ownBrandPromptPerformance,
         competitorPromptPerformance,
         coMentionAnalysis,
-        brandPositionAnalysis: safeBrandPositionAnalysis, // Use the filtered safe array
+        brandPositionAnalysis,
         sentimentTrend,
         competitiveBreakdown
       };
