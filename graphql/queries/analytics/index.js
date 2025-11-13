@@ -379,7 +379,18 @@ const resolvers = {
       // Calculate exclusivity rate (responses where only own brand is mentioned)
       let exclusiveOwnBrandCount = 0;
       results.forEach(result => {
-        const mentionedBrands = result.sentimentAnalysis.brands.filter(b => b.mentioned && validBrandNames.has(b.brandKeywords));
+        if (!result.sentimentAnalysis || !result.sentimentAnalysis.brands) {
+          return;
+        }
+
+        const mentionedBrands = result.sentimentAnalysis.brands.filter(b =>
+          b && b.mentioned && b.brandKeywords && validBrandNames.has(b.brandKeywords)
+        ).map(b => ({
+          brandKeywords: b.brandKeywords,
+          type: b.type,
+          mentioned: b.mentioned
+        }));
+
         const hasOwnBrand = mentionedBrands.some(b => b.type === 'own');
         const hasOnlyOwnBrand = hasOwnBrand && mentionedBrands.every(b => b.type === 'own');
         if (hasOnlyOwnBrand) {
