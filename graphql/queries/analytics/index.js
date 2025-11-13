@@ -216,6 +216,8 @@ const resolvers = {
         'sentimentAnalysis.brands': { $exists: true, $ne: [] }
       }).sort({ createdAt: 1 });
 
+      console.log('🔍 Found', results.length, 'results with sentiment analysis in date range');
+
       if (results.length === 0) {
         return {
           summary: {
