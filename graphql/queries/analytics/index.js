@@ -511,17 +511,12 @@ const resolvers = {
 
       // Calculate competitive breakdown
       const ownBrandPositivity = brandSentiments.find(b => b.brandType === 'own')?.positivePercentage || 0;
-      console.log('🎯 ownBrandPositivity:', ownBrandPositivity);
-      console.log('📊 brandSentiments:', brandSentiments.map(b => ({ name: b.brandName, positive: b.positivePercentage, total: b.total })));
-
       const competitiveBreakdown = brandSentiments.map(brand => {
         const positionData = brandPositionAnalysis.find(p => p.brandName === brand.brandName && p.brandType === brand.brandType);
-        const sentimentGap = brand.positivePercentage - ownBrandPositivity;
-        console.log(`  Brand ${brand.brandName}: positivePercentage=${brand.positivePercentage}, gap=${sentimentGap}`);
         return {
           brandName: brand.brandName,
           brandType: brand.brandType,
-          sentimentGap,
+          sentimentGap: brand.positivePercentage - ownBrandPositivity,
           averagePosition: positionData?.averagePosition || 0,
           positivePercentage: brand.positivePercentage,
           mentionCount: brand.total
