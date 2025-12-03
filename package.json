@@ -2,9 +2,12 @@
   "name": "airank-core",
   "private": true,
   "workspaces": [
+    "api-gateway",
     "batcher",
     "config",
-    "listener"
+    "graphql",
+    "listener",
+    "stream"
   ],
   "version": "1.0.0",
   "scripts": {
