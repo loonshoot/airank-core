@@ -4,8 +4,8 @@
     "description": "AI Rank GraphQL Service",
     "main": "index.js",
     "scripts": {
-        "start": "node index.js",
-        "dev": "nodemon index.js"
+        "start": "bun run index.js",
+        "dev": "bun --watch run index.js"
     },
     "author": "LoonShoot",
     "license": "MIT",

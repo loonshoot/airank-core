@@ -9,10 +9,11 @@
   ],
   "version": "1.0.0",
   "scripts": {
-    "dev": "node scripts/start-dev.js",
-    "dev:legacy": "concurrently -n api,batcher,graphql -c \"white,red,cyan,green,yellow,blue,magenta,orange\" \"node scripts/ngrok-tunnel.js\" \"docker compose up -d mongo1 || true\" \"cd api-gateway && npm run dev\" \"cd batcher && npm run dev\" \"cd graphql && npm run dev\" \"cd listener && npm run dev\" \"cd stream && npm run dev\" \"cd mcp && npm run dev\"",
+    "dev": "bun run scripts/start-dev.js",
+    "dev:legacy": "concurrently -n api,batcher,graphql -c \"white,red,cyan,green,yellow,blue,magenta,orange\" \"bun run scripts/ngrok-tunnel.js\" \"docker compose up -d mongo1 || true\" \"cd api-gateway && bun run dev\" \"cd batcher && bun run dev\" \"cd graphql && bun run dev\" \"cd listener && bun run dev\" \"cd stream && bun run dev\" \"cd mcp && bun run dev\"",
     "dev:down": "docker compose down",
-    "dev:cleanup": "node scripts/cleanup.js"
+    "dev:cleanup": "bun run scripts/cleanup.js",
+    "install:all": "bun install && cd api-gateway && bun install && cd ../batcher && bun install && cd ../graphql && bun install && cd ../listener && bun install && cd ../stream && bun install"
   },
   "devDependencies": {
     "axios": "^1.6.2",

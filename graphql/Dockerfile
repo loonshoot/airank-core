@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM oven/bun:1
 
 WORKDIR /app
 
@@ -14,9 +14,9 @@ RUN echo "===============================================" && \
     echo "Package.json contents:" && \
     cat package.json && \
     echo "===============================================" && \
-    npm install --verbose --no-audit --no-fund --loglevel=verbose && \
+    bun install && \
     echo "Config package installed successfully" && \
-    npm pack && \
+    bun pm pack && \
     echo "Config package packed successfully"
 
 # Install service
@@ -28,11 +28,11 @@ RUN echo "===============================================" && \
     echo "Package.json contents:" && \
     cat package.json && \
     echo "===============================================" && \
-    npm install --verbose --no-audit --no-fund --loglevel=verbose && \
+    bun install && \
     echo "GraphQL dependencies installed successfully" && \
     echo "Installing local config package..." && \
     ls -la /app/config/*.tgz && \
-    npm install /app/config/*.tgz --verbose --loglevel=verbose && \
+    bun add /app/config/*.tgz && \
     echo "Local config package installed successfully"
 
 COPY graphql/ .
@@ -40,4 +40,4 @@ COPY scripts/setup-gcp-env.sh /usr/local/bin/setup-gcp-env.sh
 RUN chmod +x /usr/local/bin/setup-gcp-env.sh
 
 EXPOSE 4002
-CMD ["/usr/local/bin/setup-gcp-env.sh", "node", "index.js"] 
+CMD ["/usr/local/bin/setup-gcp-env.sh", "bun", "run", "index.js"] 

@@ -1,0 +1,20 @@
+# Bun configuration file
+# https://bun.sh/docs/runtime/bunfig
+
+[install]
+# Disable audit warnings
+audit = false
+
+# Disable funding messages
+fund = false
+
+# Trust local dependencies
+trustedDependencies = ["@airank/config"]
+
+[install.scopes]
+# GitHub Packages registry for @airank scope
+"@airank" = { token = "$BUN_AUTH_TOKEN", url = "https://npm.pkg.github.com" }
+
+[run]
+# Enable hot reloading in watch mode
+watch = true

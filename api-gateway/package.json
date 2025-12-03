@@ -16,10 +16,7 @@
         "redis": "^4.6.12"
     },
     "scripts": {
-        "dev": "nodemon index.js",
-        "start": "node index.js"
-    },
-    "devDependencies": {
-        "nodemon": "^3.0.2"
+        "dev": "bun --watch run index.js",
+        "start": "bun run index.js"
     }
 }
