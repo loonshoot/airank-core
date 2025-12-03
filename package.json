@@ -4,13 +4,12 @@
   "workspaces": [
     "batcher",
     "config",
-    "listener",
-    "mcp"
+    "listener"
   ],
   "version": "1.0.0",
   "scripts": {
     "dev": "bun run scripts/start-dev.js",
-    "dev:legacy": "concurrently -n api,batcher,graphql -c \"white,red,cyan,green,yellow,blue,magenta,orange\" \"bun run scripts/ngrok-tunnel.js\" \"docker compose up -d mongo1 || true\" \"cd api-gateway && bun run dev\" \"cd batcher && bun run dev\" \"cd graphql && bun run dev\" \"cd listener && bun run dev\" \"cd stream && bun run dev\" \"cd mcp && bun run dev\"",
+    "dev:legacy": "concurrently -n api,batcher,graphql -c \"white,red,cyan,green,yellow,blue,magenta,orange\" \"bun run scripts/ngrok-tunnel.js\" \"docker compose up -d mongo1 || true\" \"cd api-gateway && bun run dev\" \"cd batcher && bun run dev\" \"cd graphql && bun run dev\" \"cd listener && bun run dev\" \"cd stream && bun run dev\"",
     "dev:down": "docker compose down",
     "dev:cleanup": "bun run scripts/cleanup.js",
     "install:all": "bun install && cd api-gateway && bun install && cd ../batcher && bun install && cd ../graphql && bun install && cd ../listener && bun install && cd ../stream && bun install"
