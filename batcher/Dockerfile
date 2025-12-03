@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM oven/bun:1
 
 WORKDIR /app
 
@@ -18,9 +18,9 @@ RUN echo "===============================================" && \
     echo "Package.json contents:" && \
     cat package.json && \
     echo "===============================================" && \
-    npm install --verbose --no-audit --no-fund --loglevel=verbose && \
+    bun install && \
     echo "Config package installed successfully" && \
-    npm pack && \
+    bun pm pack && \
     echo "Config package packed successfully"
 
 # Install batcher service
@@ -32,11 +32,11 @@ RUN echo "===============================================" && \
     echo "Package.json contents:" && \
     cat package.json && \
     echo "===============================================" && \
-    npm install --verbose --no-audit --no-fund --loglevel=verbose && \
+    bun install && \
     echo "Batcher dependencies installed successfully" && \
     echo "Installing local config package..." && \
     ls -la /app/config/*.tgz && \
-    npm install /app/config/*.tgz --verbose --loglevel=verbose && \
+    bun add /app/config/*.tgz && \
     echo "Local config package installed successfully"
 
 COPY batcher/ .
@@ -51,4 +51,4 @@ COPY graphql/mutations/helpers /app/graphql/mutations/helpers/
 COPY scripts/setup-gcp-env.sh /usr/local/bin/setup-gcp-env.sh
 RUN chmod +x /usr/local/bin/setup-gcp-env.sh
 
-CMD ["/usr/local/bin/setup-gcp-env.sh", "npm", "start"] 
+CMD ["/usr/local/bin/setup-gcp-env.sh", "bun", "run", "start"] 

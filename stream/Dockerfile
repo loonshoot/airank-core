@@ -1,14 +1,14 @@
-FROM node:20-slim
+FROM oven/bun:1
 
 WORKDIR /app
 
 # Copy and install stream service
 COPY stream/package*.json ./
-RUN npm install
+RUN bun install
 
 # Copy stream service code
 COPY stream/ .
 
 EXPOSE 4003
 
-CMD ["node", "index.js"]
+CMD ["bun", "run", "index.js"]

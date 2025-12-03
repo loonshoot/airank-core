@@ -5,9 +5,9 @@
   "description": "Batch processing service for various tasks",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "mocha --timeout 10000",
-    "dev": "nodemon index.js"
+    "start": "bun run index.js",
+    "test": "bun test --timeout 10000",
+    "dev": "bun --watch run index.js"
   },
   "author": "",
   "license": "MIT",
@@ -24,12 +24,10 @@
     "google-auth-library": "^9.11.0",
     "js-yaml": "^4.1.0",
     "limiter": "^2.1.0",
+    "mongodb": "^6.0.0",
     "mongoose": "^8.13.0",
     "openai": "^4.57.0",
     "redis": "^4.6.13",
     "rolling-rate-limiter": "^0.4.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
   }
 }

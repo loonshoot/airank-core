@@ -135,11 +135,11 @@ async function main() {
   }
   
   // Start services
-  startService('api', 'cd', ['api-gateway', '&&', 'npm', 'run', 'dev'], serviceEnv);
-  startService('batcher', 'cd', ['batcher', '&&', 'npm', 'run', 'dev'], serviceEnv);
-  startService('graphql', 'cd', ['graphql', '&&', 'npm', 'run', 'dev'], serviceEnv);
-  startService('listener', 'cd', ['listener', '&&', 'npm', 'run', 'dev'], serviceEnv);
-  startService('stream', 'cd', ['stream', '&&', 'npm', 'run', 'dev'], serviceEnv);
+  startService('api', 'cd', ['api-gateway', '&&', 'bun', 'run', 'dev'], serviceEnv);
+  startService('batcher', 'cd', ['batcher', '&&', 'bun', 'run', 'dev'], serviceEnv);
+  startService('graphql', 'cd', ['graphql', '&&', 'bun', 'run', 'dev'], serviceEnv);
+  startService('listener', 'cd', ['listener', '&&', 'bun', 'run', 'dev'], serviceEnv);
+  startService('stream', 'cd', ['stream', '&&', 'bun', 'run', 'dev'], serviceEnv);
   
   console.log('\n=================================================');
   console.log('✅ All services started');
