@@ -24,6 +24,7 @@
     "google-auth-library": "^9.11.0",
     "js-yaml": "^4.1.0",
     "limiter": "^2.1.0",
+    "mongodb": "^6.0.0",
     "mongoose": "^8.13.0",
     "openai": "^4.57.0",
     "redis": "^4.6.13",
