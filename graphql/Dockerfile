@@ -2,8 +2,8 @@ FROM oven/bun:1
 
 WORKDIR /app
 
-# Install git
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# Install git and jq for JSON manipulation
+RUN apt-get update && apt-get install -y git jq && rm -rf /var/lib/apt/lists/*
 
 # Copy and install config package first
 COPY config /app/config/
@@ -22,6 +22,8 @@ RUN echo "===============================================" && \
 # Install service
 WORKDIR /app
 COPY graphql/package*.json ./
+# Remove file:../config dependency (will be installed from tgz)
+RUN jq 'del(.dependencies["@airank/config"])' package.json > package.tmp.json && mv package.tmp.json package.json
 RUN echo "===============================================" && \
     echo "Installing graphql service dependencies..." && \
     echo "Working directory: $(pwd)" && \

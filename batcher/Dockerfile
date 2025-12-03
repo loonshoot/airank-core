@@ -2,8 +2,8 @@ FROM oven/bun:1
 
 WORKDIR /app
 
-# Install git
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# Install git and jq for JSON manipulation
+RUN apt-get update && apt-get install -y git jq && rm -rf /var/lib/apt/lists/*
 
 # Debug: Create directories and show structure
 RUN mkdir -p /config /batcher
@@ -26,6 +26,8 @@ RUN echo "===============================================" && \
 # Install batcher service
 WORKDIR /app
 COPY batcher/package*.json ./
+# Remove @airank/config dependency (will be installed from tgz)
+RUN jq 'del(.dependencies["@airank/config"])' package.json > package.tmp.json && mv package.tmp.json package.json
 RUN echo "===============================================" && \
     echo "Installing batcher service dependencies..." && \
     echo "Working directory: $(pwd)" && \
