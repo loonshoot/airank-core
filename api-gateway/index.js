@@ -24,6 +24,20 @@ const app = express();
 const proxy = httpProxy.createProxyServer();
 const port = process.env.API_GATEWAY_PORT || 4001; // Use environment variable or fallback to 4001
 
+// Global CORS middleware - runs before all other middleware
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, do-connecting-ip');
+
+  // Handle preflight OPTIONS requests immediately
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
 const routesFilePath = path.join(__dirname, 'routes.json');
 const isProduction = process.env.NODE_ENV === 'production';
 
