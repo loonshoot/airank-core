@@ -30,6 +30,20 @@ const CONNECTION_POOL_OPTIONS = {
 // MongoDB connection
 const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
 
+// Global CORS middleware - runs BEFORE MongoDB connects to handle preflight requests immediately
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, do-connecting-ip');
+
+  // Handle preflight OPTIONS requests immediately (before auth/db)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
 // Helper function to get workspaceId from slug
 async function getWorkspaceIdFromSlug(slug) {
   try {
@@ -648,22 +662,7 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
       }
     };
 
-    // Apply middleware to handle CORS and Authentication
-    app.use((req, res, next) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, do-connecting-ip');
-
-      // Handle preflight OPTIONS requests
-      if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-      }
-
-      next();
-    });
-
-    // Apply authentication middleware
+    // Apply authentication middleware (CORS is handled globally at startup)
     app.use(authenticateToken);
 
     // Create the Apollo Server
