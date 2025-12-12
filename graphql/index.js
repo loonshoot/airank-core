@@ -112,6 +112,9 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
     const { resolvers: changePlanResolvers } = require('./mutations/changePlan');
     const { resolvers: createSetupIntentResolvers } = require('./mutations/createSetupIntent');
     const { resolvers: savePaymentMethodResolvers } = require('./mutations/savePaymentMethod');
+    const { typeDefs: createMemberTypeDefs, createMember } = require('./mutations/createMember');
+    const { typeDefs: updateMemberTypeDefs, updateMember } = require('./mutations/updateMember');
+    const { typeDefs: deleteMemberTypeDefs, deleteMember } = require('./mutations/deleteMember');
 
     // Combine typeDefs and resolvers
     const typeDefs = [
@@ -129,6 +132,9 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
         billingProfileTypeDefs,
         billingPlansTypeDefs,
         entitlementsTypeDefs,
+        createMemberTypeDefs,
+        updateMemberTypeDefs,
+        deleteMemberTypeDefs,
         gql`
           type Query {
             workspace(workspaceId: String, workspaceSlug: String): Workspace
@@ -608,6 +614,27 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
           },
           refreshEntitlements: async (parent, args, context) => {
             return entitlementsResolvers.refreshEntitlements(parent, args, context);
+          },
+          createMember: async (parent, args, context) => {
+            const workspaceId = args.input.workspaceId || (args.input.workspaceSlug && await getWorkspaceIdFromSlug(args.input.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return createMember(parent, { input: { ...args.input, workspaceId } }, context);
+          },
+          updateMember: async (parent, args, context) => {
+            const workspaceId = args.workspaceId || (args.workspaceSlug && await getWorkspaceIdFromSlug(args.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return updateMember(parent, { ...args, workspaceId }, context);
+          },
+          deleteMember: async (parent, args, context) => {
+            const workspaceId = args.input.workspaceId || (args.input.workspaceSlug && await getWorkspaceIdFromSlug(args.input.workspaceSlug));
+            if (!workspaceId) {
+                throw new Error('Workspace not found.');
+            }
+            return deleteMember(parent, { input: { ...args.input, workspaceId } }, context);
           }
         }
     };
