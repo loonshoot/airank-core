@@ -17,6 +17,16 @@ let jwtDecrypt;
   jwtDecrypt = jose.jwtDecrypt;
 })();
 
+// Connection pool settings to prevent connection explosion
+// Default maxPoolSize=100 can cause hundreds of connections per service
+const CONNECTION_POOL_OPTIONS = {
+  maxPoolSize: 10,        // Limit connections per pool (default is 100)
+  minPoolSize: 2,         // Minimum connections to keep open
+  maxIdleTimeMS: 30000,   // Close idle connections after 30 seconds
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+};
+
 // MongoDB connection
 const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
 
@@ -25,7 +35,7 @@ async function getWorkspaceIdFromSlug(slug) {
   try {
     // Connect to the airank database to look up workspace by slug
     const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
-    const airankDb = mongoose.createConnection(airankUri);
+    const airankDb = mongoose.createConnection(airankUri, CONNECTION_POOL_OPTIONS);
     await airankDb.asPromise();
     
     const workspace = await airankDb.collection('workspaces').findOne({ slug });
@@ -43,9 +53,9 @@ async function getWorkspaceIdFromSlug(slug) {
   }
 }
 
-mongoose.connect(mongoUri)
+mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log(`Connected to MongoDB (maxPoolSize=${CONNECTION_POOL_OPTIONS.maxPoolSize})`);
 
     // Import your models and resolvers
     const { typeDefs: memberTypeDefs, resolvers: memberResolvers } = require('./queries/member');
@@ -600,7 +610,7 @@ mongoose.connect(mongoUri)
           try {
             // Connect to airank database to look up API key
             const airankUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
-            const airankDb = mongoose.createConnection(airankUri);
+            const airankDb = mongoose.createConnection(airankUri, CONNECTION_POOL_OPTIONS);
             await airankDb.asPromise();
             
             const apiKey = await airankDb.collection('apiKeys').findOne({ bearer: bearerToken });
