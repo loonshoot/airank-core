@@ -72,8 +72,10 @@ async function createWorkspace(parent, args, { user }) {
       "query:destinations",
       "query:analytics",
       "query:prompts",
-      "query:brands", 
+      "query:brands",
       "query:models",
+      "query:rankings",
+      "query:reports",
       "create:prompts",
       "create:brands",
       "create:models",
@@ -100,8 +102,11 @@ async function createWorkspace(parent, args, { user }) {
       "mutation:archiveDestination",
       "mutation:updateDestination",
       "mutation:deleteDestination",
-      "mutation:createApiKey"
-
+      "mutation:createApiKey",
+      // Member management permissions
+      "mutation:createMember",
+      "mutation:updateMember",
+      "mutation:deleteMember"
     ];
 
     // Create member document for the workspace owner

@@ -30,9 +30,10 @@ const typeDefs = gql`
     joinedAt: String
     updatedAt: String!
     status: String!
-    teamRole: String!
+    teamRole: String
     permissions: [String]
     name: String
+    isCurrentUser: Boolean
   }
 `;
 
@@ -44,18 +45,15 @@ const resolvers = {
       throw new Error('Unauthorized: You must be authenticated to access members.');
     }
 
-    // Find member with the user's userId
-    const member = await Member.findOne({
+    // Find current user's member record - only check permissions array
+    const currentMember = await Member.findOne({
       workspaceId,
       userId: user.sub,
       deletedAt: null,
-      $or: [
-        { permissions: "query:members" },
-        { teamRole: 'OWNER' }
-      ]
+      permissions: { $in: ['query:members'] }
     });
 
-    if (!member) {
+    if (!currentMember) {
       console.error('User not authorized to query members');
       throw new Error('Forbidden: You are not authorized to access members.');
     }
@@ -71,10 +69,13 @@ const resolvers = {
     const membersWithDetails = await Promise.all(
       members.map(async (memberDoc) => {
         const userDoc = await User.findOne({ _id: memberDoc.userId });
+        const isCurrentUser = memberDoc.userId === user.sub;
         return {
           ...memberDoc.toObject(),
           email: userDoc?.email || memberDoc.email || null,
-          name: userDoc?.name || null
+          name: userDoc?.name || null,
+          // Mark the current user so frontend knows which member they are
+          isCurrentUser
         };
       })
     );

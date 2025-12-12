@@ -22,15 +22,12 @@ async function updateMember(parent, args, { user }) {
   const User = mongoose.model('User');
 
   try {
-    // Check if the current user has permission to update members
+    // Check if the current user has permission to update members - ONLY use permissions array
     const currentMember = await Member.findOne({
       workspaceId,
       userId: user.sub,
       deletedAt: null,
-      $or: [
-        { permissions: { $in: ['mutation:updateMember'] } },
-        { teamRole: 'OWNER' }
-      ]
+      permissions: { $in: ['mutation:updateMember'] }
     });
 
     if (!currentMember) {
@@ -56,11 +53,6 @@ async function updateMember(parent, args, { user }) {
     // Prevent updating own permissions
     if (memberToUpdate.userId === user.sub) {
       throw new Error('Cannot update your own permissions');
-    }
-
-    // Prevent updating OWNER members unless you're also an owner
-    if (memberToUpdate.teamRole === 'OWNER' && currentMember.teamRole !== 'OWNER') {
-      throw new Error('Cannot update owner permissions');
     }
 
     // Update the member

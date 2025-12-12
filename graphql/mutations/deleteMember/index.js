@@ -28,15 +28,12 @@ async function deleteMember(parent, { input }, { user }) {
   const Member = mongoose.model('Member');
 
   try {
-    // Check if the user has permission to delete members
+    // Check if the user has permission to delete members - ONLY use permissions array
     const currentMember = await Member.findOne({
       workspaceId: workspaceId,
       userId: user.sub,
       deletedAt: null,
-      $or: [
-        { permissions: { $in: ['mutation:deleteMember'] } },
-        { teamRole: 'OWNER' }
-      ]
+      permissions: { $in: ['mutation:deleteMember'] }
     });
 
     if (!currentMember) {
@@ -57,11 +54,6 @@ async function deleteMember(parent, { input }, { user }) {
     // Prevent deleting yourself
     if (memberToDelete.userId === user.sub) {
       throw new Error('Cannot remove your own member account');
-    }
-
-    // Prevent deleting OWNER members unless you're also an owner
-    if (memberToDelete.teamRole === 'OWNER' && currentMember.teamRole !== 'OWNER') {
-      throw new Error('Cannot remove workspace owners');
     }
 
     // Soft delete the member by setting deletedAt
