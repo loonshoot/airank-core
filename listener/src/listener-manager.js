@@ -2,6 +2,17 @@ const { MongoClient } = require('mongodb');
 const Agenda = require('agenda');
 const config = require('./config');
 
+// Connection pool settings to prevent connection explosion
+// In sharded clusters, each change stream opens connections to ALL shards
+// With 4 shards and default maxPoolSize=100, this can quickly become 400+ connections
+const CONNECTION_POOL_OPTIONS = {
+  maxPoolSize: 10,        // Limit connections per pool (default is 100)
+  minPoolSize: 2,         // Minimum connections to keep open
+  maxIdleTimeMS: 30000,   // Close idle connections after 30 seconds
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+};
+
 class ListenerManager {
   constructor() {
     this.client = null;
@@ -14,10 +25,11 @@ class ListenerManager {
   async initialize() {
     console.log('🔌 Initializing Listener Manager...');
     console.log(`📋 Instance ID: ${this.instanceId}`);
+    console.log(`📊 Connection pool settings: maxPoolSize=${CONNECTION_POOL_OPTIONS.maxPoolSize}, minPoolSize=${CONNECTION_POOL_OPTIONS.minPoolSize}`);
 
-    // Connect to MongoDB
+    // Connect to MongoDB with connection pool limits
     const mongoUri = `${config.mongodb.uri}?${config.mongodb.params}`;
-    this.client = new MongoClient(mongoUri);
+    this.client = new MongoClient(mongoUri, CONNECTION_POOL_OPTIONS);
     await this.client.connect();
     console.log('✓ Connected to MongoDB');
 

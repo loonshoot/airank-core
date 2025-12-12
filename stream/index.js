@@ -1,12 +1,35 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.STREAM_PORT || 4003;
 
-// Connect to MongoDB
+// MongoDB connection string
 const mongoUri = `${process.env.MONGODB_URI}`;
+
+// Connection pool settings to prevent connection explosion
+// Default maxPoolSize=100 can cause hundreds of connections per service
+const CONNECTION_POOL_OPTIONS = {
+  maxPoolSize: 5,         // Limit connections (webhook service is lightweight)
+  minPoolSize: 1,         // Keep minimum connections open
+  maxIdleTimeMS: 60000,   // Close idle connections after 60 seconds
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 30000,
+};
+
+// Shared MongoDB client (reuse across requests instead of creating per-request)
+let mongoClient = null;
+
+async function getMongoClient() {
+  if (!mongoClient) {
+    const fullUri = `${mongoUri}?${process.env.MONGODB_PARAMS}`;
+    mongoClient = new MongoClient(fullUri, CONNECTION_POOL_OPTIONS);
+    await mongoClient.connect();
+    console.log(`✓ MongoDB connected (maxPoolSize=${CONNECTION_POOL_OPTIONS.maxPoolSize})`);
+  }
+  return mongoClient;
+}
 
 // Middleware to parse JSON (for most endpoints)
 app.use(express.json());
@@ -61,11 +84,9 @@ app.post('/webhooks/batch', async (req, res) => {
 
     console.log(`📍 Extracted workspace ID: ${workspaceId}`);
 
-    // Connect to workspace database
-    const workspaceUri = `${mongoUri}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
-    const workspaceConn = mongoose.createConnection(workspaceUri);
-    await workspaceConn.asPromise();
-    const workspaceDb = workspaceConn.db;
+    // Get shared MongoDB client (reuses connection pool)
+    const client = await getMongoClient();
+    const workspaceDb = client.db(`workspace_${workspaceId}`);
 
     // Create notification document for the listener to pick up
     // This keeps the stream service lightweight and fast
@@ -82,8 +103,6 @@ app.post('/webhooks/batch', async (req, res) => {
 
     await workspaceDb.collection('batchnotifications').insertOne(notification);
     console.log(`✅ Created batch notification document for ${workspaceId}`);
-
-    await workspaceConn.close();
 
     // Return 200 immediately - processing happens asynchronously
     res.status(200).send('OK');
@@ -123,11 +142,9 @@ app.post('/webhooks/openai-batch', async (req, res) => {
       return res.status(200).send('OK');
     }
 
-    // Connect to workspace database
-    const workspaceUri = `${mongoUri}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
-    const workspaceConn = mongoose.createConnection(workspaceUri);
-    await workspaceConn.asPromise();
-    const workspaceDb = workspaceConn.db;
+    // Get shared MongoDB client (reuses connection pool)
+    const client = await getMongoClient();
+    const workspaceDb = client.db(`workspace_${workspaceId}`);
 
     // Create notification document for the listener to pick up
     const notification = {
@@ -144,8 +161,6 @@ app.post('/webhooks/openai-batch', async (req, res) => {
     await workspaceDb.collection('batchnotifications').insertOne(notification);
     console.log(`✅ Created OpenAI batch notification for ${workspaceId}`);
 
-    await workspaceConn.close();
-
     // Return 200 immediately - processing happens asynchronously
     res.status(200).send('OK');
 
@@ -155,6 +170,20 @@ app.post('/webhooks/openai-batch', async (req, res) => {
   }
 });
 
+// Graceful shutdown
+async function shutdown(signal) {
+  console.log(`\n📡 Received ${signal}, shutting down gracefully...`);
+  if (mongoClient) {
+    await mongoClient.close();
+    console.log('✓ MongoDB connection closed');
+  }
+  process.exit(0);
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
 app.listen(port, '0.0.0.0', () => {
   console.log(`🌊 AIRank Stream Service listening on port ${port}`);
+  console.log(`📊 Connection pool: maxPoolSize=${CONNECTION_POOL_OPTIONS.maxPoolSize}`);
 });

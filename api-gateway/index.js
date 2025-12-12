@@ -74,9 +74,19 @@ if (!isProduction && process.env.REDIS_URL) {
   }
 }
 
+// Connection pool settings to prevent connection explosion
+// Default maxPoolSize=100 can cause hundreds of connections per service
+const CONNECTION_POOL_OPTIONS = {
+  maxPoolSize: 10,        // Limit connections per pool (default is 100)
+  minPoolSize: 2,         // Minimum connections to keep open
+  maxIdleTimeMS: 30000,   // Close idle connections after 30 seconds
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+};
+
 // MongoDB connection
 const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
-mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
   .then(() => {
     console.log('Connected to MongoDB');
 
@@ -451,7 +461,8 @@ mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
                   console.log('Found workspace:', workspace._id);
                   workspaceId = workspace._id;
                   logDb = mongoose.createConnection(
-                    `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`
+                    `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`,
+                    CONNECTION_POOL_OPTIONS
                   );
                 } else {
                   console.log('No workspace found for slug:', graphqlPayload.variables.workspaceSlug);
@@ -466,7 +477,8 @@ mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
         // If no workspace-specific DB, use airank DB
         if (!logDb) {
           logDb = mongoose.createConnection(
-            `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`
+            `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`,
+            CONNECTION_POOL_OPTIONS
           );
         }
 
