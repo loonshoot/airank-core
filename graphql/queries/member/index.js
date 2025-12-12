@@ -2,8 +2,20 @@
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
 
+// Define the User Model (created by Prisma in MongoDB, registered here for Mongoose access)
+const UserSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  userCode: { type: String },
+  email: { type: String },
+  emailVerified: { type: Date },
+  createdAt: { type: Date },
+  updatedAt: { type: Date }
+}, { _id: false, collection: 'users' });
+
+const User = mongoose.models.User || mongoose.model('User', UserSchema);
+
 // Define the Member Model
-const Member = mongoose.model('Member', new mongoose.Schema({
+const Member = mongoose.models.Member || mongoose.model('Member', new mongoose.Schema({
   _id: { type: String, required: true },
   workspaceId: { type: String, required: true },
   userId: { type: String, required: true },
@@ -40,10 +52,19 @@ const typeDefs = gql`
 // Define the resolvers
 const resolvers = {
   members: async (_, { workspaceId }, { user }) => {
+    console.log('=== MEMBERS QUERY DEBUG ===');
+    console.log('workspaceId received:', workspaceId);
+    console.log('user:', user ? { sub: user.sub, email: user.email } : 'null');
+
     if (!user) {
       console.error('User not authenticated');
       throw new Error('Unauthorized: You must be authenticated to access members.');
     }
+
+    // Debug: Check what's in the database
+    const allMembers = await Member.find({});
+    console.log('Total members in DB:', allMembers.length);
+    console.log('Sample member:', allMembers[0] ? { workspaceId: allMembers[0].workspaceId, userId: allMembers[0].userId } : 'none');
 
     // Find current user's member record - only check permissions array
     const currentMember = await Member.findOne({
@@ -53,8 +74,10 @@ const resolvers = {
       permissions: { $in: ['query:members'] }
     });
 
+    console.log('currentMember found:', currentMember ? { _id: currentMember._id, userId: currentMember.userId } : 'null');
+
     if (!currentMember) {
-      console.error('User not authorized to query members');
+      console.error('User not authorized to query members - workspaceId:', workspaceId, 'userId:', user.sub);
       throw new Error('Forbidden: You are not authorized to access members.');
     }
 
@@ -64,8 +87,9 @@ const resolvers = {
       deletedAt: null
     });
 
-    // Populate email and name for each member from User collection
-    const User = mongoose.model('User');
+    console.log('Members found for workspace:', members.length);
+
+    // Populate email from User collection
     const membersWithDetails = await Promise.all(
       members.map(async (memberDoc) => {
         const userDoc = await User.findOne({ _id: memberDoc.userId });
@@ -73,7 +97,7 @@ const resolvers = {
         return {
           ...memberDoc.toObject(),
           email: userDoc?.email || memberDoc.email || null,
-          name: userDoc?.name || null,
+          name: userDoc?.email?.split('@')[0] || null, // Use email prefix as name since users collection doesn't have name field
           // Mark the current user so frontend knows which member they are
           isCurrentUser
         };

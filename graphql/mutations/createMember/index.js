@@ -1,6 +1,7 @@
 // airank-core/graphql/mutations/createMember/index.js
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
+const { sendWorkspaceInvitationEmail } = require('../../../lib/email');
 
 const typeDefs = gql`
   input CreateMemberInput {
@@ -22,6 +23,7 @@ async function createMember(parent, { input }, { user }) {
   const { workspaceId, email, permissions } = input;
   const Member = mongoose.model('Member');
   const User = mongoose.model('User');
+  const Workspace = mongoose.model('Workspace');
 
   try {
     // Check if the inviter has permission to create members
@@ -34,6 +36,15 @@ async function createMember(parent, { input }, { user }) {
     if (!inviterMember) {
       throw new Error('Forbidden: You do not have permission to invite members');
     }
+
+    // Get workspace name for the invitation email
+    const workspace = await Workspace.findOne({ _id: workspaceId });
+    const workspaceName = workspace?.name || 'a workspace';
+
+    // Get inviter's email for the invitation
+    const inviterUser = await User.findOne({ _id: user.sub });
+    const inviterEmail = user.email || inviterUser?.email || 'A team member';
+    const inviterName = inviterUser?.name || inviterEmail.split('@')[0];
 
     // Check if user already exists, if not create them
     let targetUser = await User.findOne({ email });
@@ -71,6 +82,16 @@ async function createMember(parent, { input }, { user }) {
           },
           { new: true }
         );
+
+        // Send invitation email for restored member
+        await sendWorkspaceInvitationEmail({
+          to: email,
+          name: targetUser.name || email.split('@')[0],
+          inviterName: inviterName,
+          inviterEmail: inviterEmail,
+          workspaceName: workspaceName,
+        });
+
         return {
           ...restoredMember.toObject(),
           email: email
@@ -103,6 +124,15 @@ async function createMember(parent, { input }, { user }) {
       updatedAt: new Date(),
       status: 'PENDING',
       teamRole: 'MEMBER'
+    });
+
+    // Send invitation email for new member
+    await sendWorkspaceInvitationEmail({
+      to: email,
+      name: targetUser.name || email.split('@')[0],
+      inviterName: inviterName,
+      inviterEmail: inviterEmail,
+      workspaceName: workspaceName,
     });
 
     return {

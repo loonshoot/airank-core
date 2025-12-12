@@ -53,11 +53,16 @@ const resolvers = {
       if (user) {
 
 
-        // Find member with the user's userId
+        // Find member with the user's userId - must be ACCEPTED or legacy (no status)
         const member = await Member.findOne({
           workspaceId,
           userId: user.sub,
-          permissions: "query:workspaces" // Check if permissions include 'query:workspaces'
+          permissions: "query:workspaces",
+          deletedAt: null,
+          $or: [
+            { status: 'ACCEPTED' },
+            { status: { $exists: false } }
+          ]
         });
 
         if (member) { // If member found and has permission

@@ -115,6 +115,9 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
     const { typeDefs: createMemberTypeDefs, createMember } = require('./mutations/createMember');
     const { typeDefs: updateMemberTypeDefs, updateMember } = require('./mutations/updateMember');
     const { typeDefs: deleteMemberTypeDefs, deleteMember } = require('./mutations/deleteMember');
+    const { typeDefs: pendingInvitationsTypeDefs, resolvers: pendingInvitationsResolvers } = require('./queries/pendingInvitations');
+    const { typeDefs: acceptInvitationTypeDefs, acceptInvitation } = require('./mutations/acceptInvitation');
+    const { typeDefs: declineInvitationTypeDefs, declineInvitation } = require('./mutations/declineInvitation');
 
     // Combine typeDefs and resolvers
     const typeDefs = [
@@ -135,6 +138,9 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
         createMemberTypeDefs,
         updateMemberTypeDefs,
         deleteMemberTypeDefs,
+        pendingInvitationsTypeDefs,
+        acceptInvitationTypeDefs,
+        declineInvitationTypeDefs,
         gql`
           type Query {
             workspace(workspaceId: String, workspaceSlug: String): Workspace
@@ -364,9 +370,15 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
               
               const userId = context.user.sub || context.user._id;
               
-              const members = await Member.find({ 
+              const members = await Member.find({
                 userId: userId,
-                permissions: "query:workspaces"
+                permissions: "query:workspaces",
+                deletedAt: null,
+                // Only include ACCEPTED members or members without status (legacy)
+                $or: [
+                  { status: 'ACCEPTED' },
+                  { status: { $exists: false } }
+                ]
               });
               
               if (!members || members.length === 0) {
@@ -459,6 +471,9 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
             },
             entitlements: async (parent, args, context) => {
                 return entitlementsResolvers.entitlements(parent, args, context);
+            },
+            pendingInvitations: async (parent, args, context) => {
+                return pendingInvitationsResolvers.pendingInvitations(parent, args, context);
             }
         },
         Mutation: {
@@ -635,6 +650,12 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
                 throw new Error('Workspace not found.');
             }
             return deleteMember(parent, { input: { ...args.input, workspaceId } }, context);
+          },
+          acceptInvitation: async (parent, args, context) => {
+            return acceptInvitation(parent, args, context);
+          },
+          declineInvitation: async (parent, args, context) => {
+            return declineInvitation(parent, args, context);
           }
         }
     };
