@@ -46,9 +46,8 @@ async function createMember(parent, { input }, { user }) {
     const inviterEmail = user.email || inviterUser?.email || 'A team member';
     const inviterName = inviterUser?.name || inviterEmail.split('@')[0];
 
-    // Check if user already exists, if not create them
+    // Check if user exists by email, create if not
     let targetUser = await User.findOne({ email });
-
     if (!targetUser) {
       targetUser = await User.create({
         _id: new mongoose.Types.ObjectId().toString(),
@@ -58,47 +57,15 @@ async function createMember(parent, { input }, { user }) {
       });
     }
 
-    // Check if a member record already exists
+    // Check if member already exists in this workspace
     const existingMember = await Member.findOne({
       workspaceId: workspaceId,
-      userId: targetUser._id
+      email: email,
+      deletedAt: null
     });
 
     if (existingMember) {
-      // If member was previously deleted, restore them
-      if (existingMember.deletedAt) {
-        const restoredMember = await Member.findOneAndUpdate(
-          { _id: existingMember._id },
-          {
-            $set: {
-              status: 'PENDING',
-              permissions: permissions || ['query:workspaces', 'query:members'],
-              deletedAt: null,
-              updatedAt: new Date(),
-              invitedAt: new Date(),
-              inviter: user.sub,
-              teamRole: 'MEMBER'
-            }
-          },
-          { new: true }
-        );
-
-        // Send invitation email for restored member
-        await sendWorkspaceInvitationEmail({
-          to: email,
-          name: targetUser.name || email.split('@')[0],
-          inviterName: inviterName,
-          inviterEmail: inviterEmail,
-          workspaceName: workspaceName,
-        });
-
-        return {
-          ...restoredMember.toObject(),
-          email: email
-        };
-      } else {
-        throw new Error('Member already exists in this workspace');
-      }
+      throw new Error('Member already exists in this workspace');
     }
 
     // Create new member with default permissions
@@ -126,7 +93,6 @@ async function createMember(parent, { input }, { user }) {
       teamRole: 'MEMBER'
     });
 
-    // Send invitation email for new member
     await sendWorkspaceInvitationEmail({
       to: email,
       name: targetUser.name || email.split('@')[0],

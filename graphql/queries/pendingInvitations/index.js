@@ -30,18 +30,19 @@ const resolvers = {
 
     // Get the user's email from airank.users (trusted source, not JWT)
     const airankUser = await User.findOne({ _id: user.sub });
-    if (!airankUser || !airankUser.email) {
-      throw new Error('User not found');
+
+    // Build query conditions - always check by userId
+    const queryConditions = [{ userId: user.sub }];
+
+    // If user exists in airank.users, also check by email
+    // This handles the case where user was already logged in when invited
+    if (airankUser?.email) {
+      queryConditions.push({ email: airankUser.email });
     }
 
     // Find pending invitations by userId OR by email (from trusted DB)
-    // This handles the case where user was already logged in when invited
-    // (sign-in merge didn't happen because session was already active)
     const pendingMembers = await Member.find({
-      $or: [
-        { userId: user.sub },
-        { email: airankUser.email }
-      ],
+      $or: queryConditions,
       status: 'PENDING',
       deletedAt: null
     });
