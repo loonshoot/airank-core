@@ -14,18 +14,32 @@ async function declineInvitation(parent, { invitationId }, { user }) {
   }
 
   const Member = mongoose.models.Member || mongoose.model('Member');
+  const User = mongoose.models.User || mongoose.model('User');
 
-  // Find the invitation - must belong to this user and be PENDING
-  // Uses user.sub directly since signIn event merges placeholder user IDs
+  // Get the user's email from airank.users (trusted source)
+  const airankUser = await User.findOne({ _id: user.sub });
+  if (!airankUser || !airankUser.email) {
+    throw new Error('User not found');
+  }
+
+  // Find the invitation by userId OR email (from trusted DB)
   const invitation = await Member.findOne({
     _id: invitationId,
-    userId: user.sub,
+    $or: [
+      { userId: user.sub },
+      { email: airankUser.email }
+    ],
     status: 'PENDING',
     deletedAt: null
   });
 
   if (!invitation) {
     throw new Error('Invitation not found or already processed');
+  }
+
+  // If invitation was found by email (placeholder userId), clean up placeholder user
+  if (invitation.userId !== user.sub) {
+    await User.deleteOne({ _id: invitation.userId });
   }
 
   // Soft delete the member record (decline)

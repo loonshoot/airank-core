@@ -28,10 +28,20 @@ const resolvers = {
     const Workspace = mongoose.models.Workspace || mongoose.model('Workspace');
     const User = mongoose.models.User || mongoose.model('User');
 
-    // Use user.sub directly - the signIn event merges placeholder user IDs
-    // to the NextAuth user ID when a user logs in
+    // Get the user's email from airank.users (trusted source, not JWT)
+    const airankUser = await User.findOne({ _id: user.sub });
+    if (!airankUser || !airankUser.email) {
+      throw new Error('User not found');
+    }
+
+    // Find pending invitations by userId OR by email (from trusted DB)
+    // This handles the case where user was already logged in when invited
+    // (sign-in merge didn't happen because session was already active)
     const pendingMembers = await Member.find({
-      userId: user.sub,
+      $or: [
+        { userId: user.sub },
+        { email: airankUser.email }
+      ],
       status: 'PENDING',
       deletedAt: null
     });
