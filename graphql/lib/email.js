@@ -17,7 +17,7 @@ const getClient = () => {
 // Common template model values
 const getCommonTemplateModel = () => ({
   product_name: 'AI Rank',
-  product_url: process.env.APP_URL || 'https://airank.com',
+  product_url: process.env.APP_URL || 'https://app.getairank.com',
   company_name: 'AI Rank',
   company_address: '',
   current_year: new Date().getFullYear().toString(),
@@ -40,7 +40,7 @@ const sendWorkspaceInvitationEmail = async ({ to, name, inviterName, inviterEmai
     name: name || to.split('@')[0],
     inviter_name: inviterName || inviterEmail || 'A team member',
     workspace_name: workspaceName,
-    action_url: `${process.env.APP_URL || 'https://airank.com'}/account`,
+    action_url: `${process.env.APP_URL || 'https://app.getairank.com'}/account`,
   };
 
   if (isDevelopment) {
