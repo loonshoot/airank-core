@@ -1,7 +1,7 @@
 // airank-core/graphql/mutations/createMember/index.js
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
-const { sendWorkspaceInvitationEmail } = require('../../../lib/email');
+const { sendWorkspaceInvitationEmail } = require('../../lib/email');
 
 const typeDefs = gql`
   input CreateMemberInput {
