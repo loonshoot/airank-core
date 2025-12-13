@@ -94,11 +94,14 @@ const resolvers = {
       members.map(async (memberDoc) => {
         const userDoc = await User.findOne({ _id: memberDoc.userId });
         const isCurrentUser = memberDoc.userId === user.sub;
+        // Get email from user doc or member doc
+        const email = userDoc?.email || memberDoc.email || null;
+        // Derive name from email if available
+        const name = email ? email.split('@')[0] : null;
         return {
           ...memberDoc.toObject(),
-          email: userDoc?.email || memberDoc.email || null,
-          name: userDoc?.email?.split('@')[0] || null, // Use email prefix as name since users collection doesn't have name field
-          // Mark the current user so frontend knows which member they are
+          email,
+          name,
           isCurrentUser
         };
       })
