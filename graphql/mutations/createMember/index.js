@@ -1,6 +1,7 @@
 // airank-core/graphql/mutations/createMember/index.js
 const { gql } = require('apollo-server-express');
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 const { sendWorkspaceInvitationEmail } = require('../../lib/email');
 
 const typeDefs = gql`
@@ -47,10 +48,13 @@ async function createMember(parent, { input }, { user }) {
     const inviterName = inviterUser?.name || inviterEmail.split('@')[0];
 
     // Check if user exists by email, create if not
+    // Include userCode field required by Prisma schema
     let targetUser = await User.findOne({ email });
     if (!targetUser) {
+      const newUserId = uuidv4().replace(/-/g, '').substring(0, 25);
       targetUser = await User.create({
-        _id: new mongoose.Types.ObjectId().toString(),
+        _id: newUserId,
+        userCode: newUserId,
         email: email,
         createdAt: new Date(),
         updatedAt: new Date()
