@@ -281,6 +281,12 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
       }
     };
 
+  // Trusted webhook sources that can use their signature/user-agent as rate limit identifier
+  const TRUSTED_WEBHOOK_SOURCES = {
+    'stripe': (req) => req.headers['stripe-signature'] || (req.headers['user-agent'] && req.headers['user-agent'].includes('Stripe')),
+    'google': (req) => req.headers['user-agent'] && req.headers['user-agent'].includes('Google-Cloud-Pubsub'),
+  };
+
   // IP and API Key based Rate Limiting Middleware
   const checkRateLimit = async (req, res, next) => {
     let identifier;
@@ -291,6 +297,16 @@ mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
     } else if (req.headers['do-connecting-ip']) {
       identifier = req.headers['do-connecting-ip'];
     } else {
+      // Check for trusted webhook sources
+      for (const [source, check] of Object.entries(TRUSTED_WEBHOOK_SOURCES)) {
+        if (check(req)) {
+          identifier = `webhook:${source}`;
+          break;
+        }
+      }
+    }
+
+    if (!identifier) {
       return res.status(429).json({ error: 'No identifer received' });
     }
 
