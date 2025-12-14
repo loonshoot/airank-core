@@ -113,6 +113,9 @@ const typeDefs = gql`
     paymentMethodExpMonth: Int
     paymentMethodExpYear: Int
 
+    # Payment collection method: 'charge_automatically' (card) or 'send_invoice' (invoice)
+    collectionMethod: String
+
     # Default profile tracking
     isDefault: Boolean!
     defaultForWorkspaceId: String
