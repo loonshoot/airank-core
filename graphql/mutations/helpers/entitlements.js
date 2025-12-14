@@ -125,21 +125,28 @@ async function getEntitlements(workspaceId) {
     actualPromptsUsed = effectiveProfile.promptsUsed || 0;
   }
 
-  // Calculate remaining limits using live counts
-  const brandsRemaining = Math.max(0, effectiveProfile.brandsLimit - actualBrandsUsed);
-  const promptsRemaining = Math.max(0, effectiveProfile.promptsLimit - actualPromptsUsed);
+  // Calculate remaining limits using live counts (-1 means unlimited)
+  const brandsUnlimited = effectiveProfile.brandsLimit === -1;
+  const promptsUnlimited = effectiveProfile.promptsLimit === -1;
+  const modelsUnlimited = effectiveProfile.modelsLimit === -1;
+
+  const brandsRemaining = brandsUnlimited ? -1 : Math.max(0, effectiveProfile.brandsLimit - actualBrandsUsed);
+  const promptsRemaining = promptsUnlimited ? -1 : Math.max(0, effectiveProfile.promptsLimit - actualPromptsUsed);
 
   return {
     brandsLimit: effectiveProfile.brandsLimit,
     brandsUsed: actualBrandsUsed,
     brandsRemaining,
+    brandsUnlimited,
 
     promptsLimit: effectiveProfile.promptsLimit,
     promptsUsed: actualPromptsUsed,
     promptsRemaining,
+    promptsUnlimited,
     promptCharacterLimit: effectiveProfile.promptCharacterLimit,
 
     modelsLimit: effectiveProfile.modelsLimit,
+    modelsUnlimited,
     allowedModels: effectiveProfile.allowedModels || [],
 
     jobFrequency: effectiveProfile.jobFrequency || 'monthly',
@@ -179,19 +186,28 @@ async function canPerformAction(workspaceId, action) {
   const entitlements = await getEntitlements(workspaceId);
 
   switch (action) {
-    case 'createBrand':
+    case 'createBrand': {
+      const allowed = entitlements.brandsUnlimited || entitlements.brandsRemaining > 0;
       return {
-        allowed: entitlements.brandsRemaining > 0,
-        reason: entitlements.brandsRemaining > 0 ? null : `Brand limit reached (${entitlements.brandsUsed}/${entitlements.brandsLimit}). Upgrade your plan to add more brands.`
+        allowed,
+        reason: allowed ? null : `Brand limit reached (${entitlements.brandsUsed}/${entitlements.brandsLimit}). Upgrade your plan to add more brands.`
       };
+    }
 
-    case 'createPrompt':
+    case 'createPrompt': {
+      const allowed = entitlements.promptsUnlimited || entitlements.promptsRemaining > 0;
       return {
-        allowed: entitlements.promptsRemaining > 0,
-        reason: entitlements.promptsRemaining > 0 ? null : `Prompt limit reached (${entitlements.promptsUsed}/${entitlements.promptsLimit}). Limits reset monthly.`
+        allowed,
+        reason: allowed ? null : `Prompt limit reached (${entitlements.promptsUsed}/${entitlements.promptsLimit}). Limits reset monthly.`
       };
+    }
 
     case 'addModel': {
+      // If unlimited, always allow
+      if (entitlements.modelsUnlimited) {
+        return { allowed: true, reason: null };
+      }
+
       // Count actual enabled models in workspace
       let actualModelsUsed = 0;
       try {
