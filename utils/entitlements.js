@@ -27,7 +27,10 @@ async function canCreateBrand(workspaceId) {
 
   const { brandsLimit, brandsUsed } = billingProfile;
 
-  if (brandsUsed >= brandsLimit) {
+  // -1 means unlimited
+  const isUnlimited = brandsLimit === -1;
+
+  if (!isUnlimited && brandsUsed >= brandsLimit) {
     return {
       allowed: false,
       reason: `Brand limit reached. Your plan allows ${brandsLimit} brands.`,
@@ -69,7 +72,10 @@ async function canCreatePrompt(workspaceId) {
 
   const { promptsLimit, promptsUsed, promptsResetDate } = billingProfile;
 
-  if (promptsUsed >= promptsLimit) {
+  // -1 means unlimited
+  const isUnlimited = promptsLimit === -1;
+
+  if (!isUnlimited && promptsUsed >= promptsLimit) {
     return {
       allowed: false,
       reason: `Prompt limit reached. Your plan allows ${promptsLimit} prompts${promptsResetDate ? ` (resets ${promptsResetDate.toLocaleDateString()})` : ''}.`,

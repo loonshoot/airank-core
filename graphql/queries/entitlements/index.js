@@ -225,12 +225,13 @@ function enforceModelLimits(enabledModels, modelsLimit, allowedModels = []) {
 
     // A model requires upgrade if:
     // 1. It's NOT in the allowed list, OR
-    // 2. It's selectable, not enabled, AND we're at/over the limit
+    // 2. It's selectable, not enabled, AND we're at/over the limit (unless unlimited: -1)
     let requiresUpgrade = false;
+    const isUnlimited = modelsLimit === -1;
 
     if (!isInAllowedList) {
       requiresUpgrade = true;
-    } else if (modelConfig.isSelectable && !isCurrentlyEnabled && enabledSelectableCount >= modelsLimit) {
+    } else if (!isUnlimited && modelConfig.isSelectable && !isCurrentlyEnabled && enabledSelectableCount >= modelsLimit) {
       requiresUpgrade = true;
     }
 
@@ -308,9 +309,13 @@ async function getEntitlements(workspaceId) {
     actualPromptsUsed = effectiveProfile.promptsUsed || 0;
   }
 
-  // Calculate remaining limits using live counts
-  const brandsRemaining = Math.max(0, effectiveProfile.brandsLimit - actualBrandsUsed);
-  const promptsRemaining = Math.max(0, effectiveProfile.promptsLimit - actualPromptsUsed);
+  // Calculate remaining limits using live counts (-1 means unlimited)
+  const brandsUnlimited = effectiveProfile.brandsLimit === -1;
+  const promptsUnlimited = effectiveProfile.promptsLimit === -1;
+  const modelsUnlimited = effectiveProfile.modelsLimit === -1;
+
+  const brandsRemaining = brandsUnlimited ? -1 : Math.max(0, effectiveProfile.brandsLimit - actualBrandsUsed);
+  const promptsRemaining = promptsUnlimited ? -1 : Math.max(0, effectiveProfile.promptsLimit - actualPromptsUsed);
 
   // Get workspace models to enforce limits
   const models = await getWorkspaceModels(workspaceId);
@@ -353,10 +358,10 @@ async function getEntitlements(workspaceId) {
     isInGracePeriod: inGracePeriod,
     paymentExpired,
 
-    // Action permissions
-    canCreateBrand: brandsRemaining > 0,
-    canCreatePrompt: promptsRemaining > 0,
-    canAddModel: models.filter(m => !m.requiresUpgrade).length < effectiveProfile.modelsLimit,
+    // Action permissions (-1 means unlimited, so always allowed)
+    canCreateBrand: brandsUnlimited || brandsRemaining > 0,
+    canCreatePrompt: promptsUnlimited || promptsRemaining > 0,
+    canAddModel: modelsUnlimited || models.filter(m => !m.requiresUpgrade).length < effectiveProfile.modelsLimit,
     canRunJobs: !paymentExpired,
   };
 }
