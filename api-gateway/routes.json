@@ -4,6 +4,12 @@
       "path": "/graphql",
       "target": "http://airank-core-graphql:4002/graphql",
       "type": "graphql"
+    },
+    {
+      "path": "/webhooks/internal/stripe",
+      "target": "http://airank-core-stream:4003/webhooks/internal/stripe",
+      "type": "rest",
+      "headerlessAuth": true
     }
   ]
 }

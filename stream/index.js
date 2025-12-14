@@ -1,15 +1,32 @@
 const express = require('express');
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 require('dotenv').config();
+
+// Import Stripe billing sync helpers
+const {
+  syncBillingFromSubscription,
+  findBillingProfileByStripeCustomer,
+  handleSubscriptionDeleted,
+  handlePaymentFailed,
+  clearPaymentFailure
+} = require('./helpers/syncBillingFromStripe');
 
 const app = express();
 const port = process.env.STREAM_PORT || 4003;
 
+// Initialize Stripe
+let stripe = null;
+const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.PAYMENTS_SECRET_KEY;
+if (stripeKey && stripeKey !== 'sk_test' && stripeKey.startsWith('sk_')) {
+  stripe = require('stripe')(stripeKey);
+  console.log('✓ Stripe initialized');
+}
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+
 // MongoDB connection string
-const mongoUri = `${process.env.MONGODB_URI}`;
+const mongoUri = `${process.env.MONGODB_URI}/airank?${process.env.MONGODB_PARAMS}`;
 
 // Connection pool settings to prevent connection explosion
-// Default maxPoolSize=100 can cause hundreds of connections per service
 const CONNECTION_POOL_OPTIONS = {
   maxPoolSize: 5,         // Limit connections (webhook service is lightweight)
   minPoolSize: 1,         // Keep minimum connections open
@@ -18,18 +35,146 @@ const CONNECTION_POOL_OPTIONS = {
   socketTimeoutMS: 30000,
 };
 
-// Shared MongoDB client (reuse across requests instead of creating per-request)
-let mongoClient = null;
+// Internal Stripe webhook endpoint - for billing profile sync
+// Needs raw body for signature verification, must be registered BEFORE express.json() middleware
+app.post('/webhooks/internal/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['stripe-signature'];
 
-async function getMongoClient() {
-  if (!mongoClient) {
-    const fullUri = `${mongoUri}?${process.env.MONGODB_PARAMS}`;
-    mongoClient = new MongoClient(fullUri, CONNECTION_POOL_OPTIONS);
-    await mongoClient.connect();
-    console.log(`✓ MongoDB connected (maxPoolSize=${CONNECTION_POOL_OPTIONS.maxPoolSize})`);
+  let event;
+  try {
+    const rawBody = req.body;
+
+    // Verify webhook signature if secret is configured
+    if (WEBHOOK_SECRET && signature && stripe) {
+      event = stripe.webhooks.constructEvent(rawBody, signature, WEBHOOK_SECRET);
+    } else {
+      // For development without webhook secret
+      event = typeof rawBody === 'string' ? JSON.parse(rawBody) : JSON.parse(rawBody.toString());
+    }
+  } catch (err) {
+    console.error('❌ Stripe webhook signature verification failed:', err.message);
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
-  return mongoClient;
-}
+
+  console.log(`📨 Stripe webhook received: ${event.type}`);
+
+  try {
+    // Use the default mongoose connection's db
+    const db = mongoose.connection.db;
+
+    let result;
+
+    switch (event.type) {
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        const customerId = subscription.customer;
+
+        const billingProfile = await findBillingProfileByStripeCustomer(db, customerId);
+        if (!billingProfile) {
+          console.warn(`⚠️  No billing profile found for Stripe customer: ${customerId}`);
+          result = { success: false, reason: 'No billing profile found for customer' };
+          break;
+        }
+
+        if (!stripe) {
+          console.error('❌ Stripe not initialized, cannot sync subscription');
+          result = { success: false, reason: 'Stripe not initialized' };
+          break;
+        }
+
+        const updatedProfile = await syncBillingFromSubscription(db, billingProfile._id, subscription, stripe);
+        result = {
+          success: true,
+          billingProfileId: billingProfile._id,
+          plan: updatedProfile?.currentPlan,
+          status: updatedProfile?.planStatus
+        };
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        const customerId = subscription.customer;
+
+        const billingProfile = await findBillingProfileByStripeCustomer(db, customerId);
+        if (!billingProfile) {
+          console.warn(`⚠️  No billing profile found for Stripe customer: ${customerId}`);
+          result = { success: false, reason: 'No billing profile found for customer' };
+          break;
+        }
+
+        await handleSubscriptionDeleted(db, billingProfile._id);
+        result = {
+          success: true,
+          billingProfileId: billingProfile._id,
+          action: 'reset_to_free'
+        };
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        const customerId = invoice.customer;
+
+        const billingProfile = await findBillingProfileByStripeCustomer(db, customerId);
+        if (!billingProfile) {
+          console.warn(`⚠️  No billing profile found for Stripe customer: ${customerId}`);
+          result = { success: false, reason: 'No billing profile found for customer' };
+          break;
+        }
+
+        await handlePaymentFailed(db, billingProfile._id);
+        result = {
+          success: true,
+          billingProfileId: billingProfile._id,
+          action: 'grace_period_set'
+        };
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+
+        // Only handle subscription invoices
+        if (!invoice.subscription) {
+          result = { success: true, skipped: true, reason: 'Not a subscription invoice' };
+          break;
+        }
+
+        const customerId = invoice.customer;
+        const billingProfile = await findBillingProfileByStripeCustomer(db, customerId);
+        if (!billingProfile) {
+          console.warn(`⚠️  No billing profile found for Stripe customer: ${customerId}`);
+          result = { success: false, reason: 'No billing profile found for customer' };
+          break;
+        }
+
+        // Clear payment failure if exists
+        if (billingProfile.paymentFailedAt) {
+          await clearPaymentFailure(db, billingProfile._id);
+        }
+        result = {
+          success: true,
+          billingProfileId: billingProfile._id,
+          action: 'payment_failure_cleared'
+        };
+        break;
+      }
+
+      default:
+        console.log(`⚠️  Unhandled Stripe event type: ${event.type}`);
+        result = { success: true, skipped: true, reason: 'Unhandled event type' };
+    }
+
+    console.log(`✅ Stripe webhook result:`, result);
+    return res.json({ received: true, result });
+
+  } catch (err) {
+    console.error(`❌ Error handling Stripe webhook ${event.type}:`, err);
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 // Middleware to parse JSON (for most endpoints)
 app.use(express.json());
@@ -84,25 +229,30 @@ app.post('/webhooks/batch', async (req, res) => {
 
     console.log(`📍 Extracted workspace ID: ${workspaceId}`);
 
-    // Get shared MongoDB client (reuses connection pool)
-    const client = await getMongoClient();
-    const workspaceDb = client.db(`workspace_${workspaceId}`);
+    // Connect to workspace-specific database using mongoose
+    const workspaceUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
+    const workspaceDb = mongoose.createConnection(workspaceUri, CONNECTION_POOL_OPTIONS);
+    await workspaceDb.asPromise();
 
-    // Create notification document for the listener to pick up
-    // This keeps the stream service lightweight and fast
-    const gcsUri = `gs://${bucket}/${fileName}`;
-    const notification = {
-      provider: 'vertex', // GCS notifications are for Vertex AI batches
-      gcsUri,
-      bucket,
-      fileName,
-      workspaceId,
-      receivedAt: new Date(),
-      processed: false
-    };
+    try {
+      // Create notification document for the listener to pick up
+      // This keeps the stream service lightweight and fast
+      const gcsUri = `gs://${bucket}/${fileName}`;
+      const notification = {
+        provider: 'vertex', // GCS notifications are for Vertex AI batches
+        gcsUri,
+        bucket,
+        fileName,
+        workspaceId,
+        receivedAt: new Date(),
+        processed: false
+      };
 
-    await workspaceDb.collection('batchnotifications').insertOne(notification);
-    console.log(`✅ Created batch notification document for ${workspaceId}`);
+      await workspaceDb.collection('batchnotifications').insertOne(notification);
+      console.log(`✅ Created batch notification document for ${workspaceId}`);
+    } finally {
+      await workspaceDb.close();
+    }
 
     // Return 200 immediately - processing happens asynchronously
     res.status(200).send('OK');
@@ -142,24 +292,29 @@ app.post('/webhooks/openai-batch', async (req, res) => {
       return res.status(200).send('OK');
     }
 
-    // Get shared MongoDB client (reuses connection pool)
-    const client = await getMongoClient();
-    const workspaceDb = client.db(`workspace_${workspaceId}`);
+    // Connect to workspace-specific database using mongoose
+    const workspaceUri = `${process.env.MONGODB_URI}/workspace_${workspaceId}?${process.env.MONGODB_PARAMS}`;
+    const workspaceDb = mongoose.createConnection(workspaceUri, CONNECTION_POOL_OPTIONS);
+    await workspaceDb.asPromise();
 
-    // Create notification document for the listener to pick up
-    const notification = {
-      provider: 'openai',
-      batchId,
-      status,
-      outputFileId: batchEvent.output_file_id,
-      errorFileId: batchEvent.error_file_id,
-      workspaceId,
-      receivedAt: new Date(),
-      processed: false
-    };
+    try {
+      // Create notification document for the listener to pick up
+      const notification = {
+        provider: 'openai',
+        batchId,
+        status,
+        outputFileId: batchEvent.output_file_id,
+        errorFileId: batchEvent.error_file_id,
+        workspaceId,
+        receivedAt: new Date(),
+        processed: false
+      };
 
-    await workspaceDb.collection('batchnotifications').insertOne(notification);
-    console.log(`✅ Created OpenAI batch notification for ${workspaceId}`);
+      await workspaceDb.collection('batchnotifications').insertOne(notification);
+      console.log(`✅ Created OpenAI batch notification for ${workspaceId}`);
+    } finally {
+      await workspaceDb.close();
+    }
 
     // Return 200 immediately - processing happens asynchronously
     res.status(200).send('OK');
@@ -173,17 +328,24 @@ app.post('/webhooks/openai-batch', async (req, res) => {
 // Graceful shutdown
 async function shutdown(signal) {
   console.log(`\n📡 Received ${signal}, shutting down gracefully...`);
-  if (mongoClient) {
-    await mongoClient.close();
-    console.log('✓ MongoDB connection closed');
-  }
+  await mongoose.disconnect();
+  console.log('✓ MongoDB connection closed');
   process.exit(0);
 }
 
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`🌊 AIRank Stream Service listening on port ${port}`);
-  console.log(`📊 Connection pool: maxPoolSize=${CONNECTION_POOL_OPTIONS.maxPoolSize}`);
-});
+// Connect to MongoDB and start server
+mongoose.connect(mongoUri, CONNECTION_POOL_OPTIONS)
+  .then(() => {
+    console.log(`✓ MongoDB connected (maxPoolSize=${CONNECTION_POOL_OPTIONS.maxPoolSize})`);
+
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`🌊 AIRank Stream Service listening on port ${port}`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });

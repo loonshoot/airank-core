@@ -5,11 +5,12 @@ This guide explains how to create billing profiles with custom pricing, includin
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Creating a $0 Demo/Test Account](#creating-a-0-demotest-account)
-3. [Creating an Invoice-Based Enterprise Account](#creating-an-invoice-based-enterprise-account)
-4. [Attaching Workspaces to the Billing Profile](#attaching-workspaces-to-the-billing-profile)
-5. [Managing Multiple Demo Workspaces](#managing-multiple-demo-workspaces)
-6. [Troubleshooting](#troubleshooting)
+2. [Setup: Configure Stripe Webhook](#setup-configure-stripe-webhook)
+3. [Creating a $0 Demo/Test Account](#creating-a-0-demotest-account)
+4. [Creating an Invoice-Based Enterprise Account](#creating-an-invoice-based-enterprise-account)
+5. [Attaching Workspaces to the Billing Profile](#attaching-workspaces-to-the-billing-profile)
+6. [Managing Multiple Demo Workspaces](#managing-multiple-demo-workspaces)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -24,13 +25,55 @@ This guide explains how to create billing profiles with custom pricing, includin
 **What you'll need:**
 - Admin access to Stripe Dashboard
 - Access to the AIRank application (logged in as admin)
-- 10-15 minutes
+- 5-10 minutes
+
+**How it works:**
+1. Create a billing profile in the AIRank UI (this auto-creates a Stripe customer)
+2. Find the customer in Stripe and attach a subscription directly in Stripe
+3. Stripe webhooks automatically sync the subscription to AIRank
+4. The billing profile is updated with the correct plan limits
+
+---
+
+## Setup: Configure Stripe Webhook
+
+Before using the streamlined workflow, ensure the Stripe webhook is configured:
+
+### One-Time Setup
+
+1. **Get your webhook endpoint URL**
+   - Production: `https://api.yourdomain.com/webhooks/internal/stripe`
+   - Development: Use ngrok or similar to expose your local endpoint
+
+2. **Configure webhook in Stripe**
+   - Go to [Stripe Dashboard](https://dashboard.stripe.com) → **Developers** → **Webhooks**
+   - Click **"Add endpoint"**
+   - Enter your endpoint URL
+   - Select the following events:
+     - `customer.subscription.created`
+     - `customer.subscription.updated`
+     - `customer.subscription.deleted`
+     - `invoice.payment_failed`
+     - `invoice.payment_succeeded`
+   - Click **"Add endpoint"**
+
+3. **Copy the webhook signing secret**
+   - After creating, click on the endpoint
+   - Click **"Reveal"** under Signing secret
+   - Copy the secret (starts with `whsec_`)
+
+4. **Add to environment variables**
+   ```bash
+   STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+   ```
 
 ---
 
 ## Creating a $0 Demo/Test Account
 
-### Step 1: Create the $0 Price in Stripe
+### Step 1: Create a $0 Price in Stripe (One-Time)
+
+If you haven't already created a $0 price for demos:
 
 1. **Log in to Stripe Dashboard**
    - Go to [https://dashboard.stripe.com](https://dashboard.stripe.com)
@@ -44,17 +87,11 @@ This guide explains how to create billing profiles with custom pricing, includin
    - Click the **"Add another price"** button
    - Configure the new price:
      - **Price**: Enter `0` (or `0.00`)
-     - **Billing period**: Select `Monthly` (or `One-time` if preferred)
-     - **Price description** (optional): Enter "Demo/Internal - $0" to identify it easily
+     - **Billing period**: Select `Monthly`
+     - **Price description** (optional): Enter "Demo/Internal - $0"
    - Click **"Add price"**
 
-4. **Copy the Price ID**
-   - After creating, you'll see the new price in the list
-   - The Price ID looks like: `price_1ABC123xyz456DEF789`
-   - **Copy this ID** - you'll need it in Step 2
-   - You can also note the API ID from the right sidebar when clicking on the price
-
-### Step 2: Create the Billing Profile in AIRank
+### Step 2: Create Billing Profile in AIRank
 
 1. **Log in to AIRank**
    - Go to your AIRank application
@@ -65,108 +102,80 @@ This guide explains how to create billing profiles with custom pricing, includin
    - Click **"Create New Billing Profile"**
    - Enter a name: `"Internal Demo Account"` or `"Test Environment"`
    - Click **"Create"**
-   - **Note the Billing Profile ID** shown after creation (you'll need this for Step 3)
 
-### Step 3: Subscribe the Billing Profile to the $0 Enterprise Plan
+### Step 3: Add Subscription in Stripe
 
-You'll need to use the GraphQL API for this step. Don't worry - just follow these exact steps:
+1. **Find the Customer in Stripe**
+   - Go to Stripe Dashboard → **Customers**
+   - Search for the billing profile name you just created
+   - Click on the customer to open their details
 
-1. **Open the GraphQL Playground**
-   - In your browser, go to: `https://your-airank-domain.com/graphql`
-   - (Replace `your-airank-domain.com` with your actual domain)
+2. **Create Subscription**
+   - In the customer view, click **"Create subscription"** or go to **Subscriptions** tab → **"+"**
+   - Select the **Enterprise** product
+   - Choose the **$0/month** price you created
+   - Click **"Start subscription"**
 
-2. **Run the Subscription Mutation**
-   - Copy and paste this query into the left panel:
-
-   ```graphql
-   mutation CreateDemoSubscription {
-     createSubscription(
-       billingProfileId: "YOUR_BILLING_PROFILE_ID"
-       planId: "enterprise"
-       interval: "monthly"
-     ) {
-       billingProfile {
-         _id
-         name
-         currentPlan
-         brandsLimit
-         promptsLimit
-       }
-       stripeSubscriptionId
-     }
-   }
-   ```
-
-3. **Replace the Placeholder**
-   - Find `YOUR_BILLING_PROFILE_ID` in the query
-   - Replace it with the Billing Profile ID from Step 2
-   - Example: `"675a1b2c3d4e5f6g7h8i9j0k"`
-
-4. **Execute the Query**
-   - Click the **Play button** ▶️ in the middle
-   - You should see a success response showing:
-     - Current plan: `"enterprise"`
+3. **Automatic Sync**
+   - The webhook will automatically fire
+   - AIRank will receive the `customer.subscription.created` event
+   - The billing profile will be updated with enterprise limits:
+     - Plan: `enterprise`
      - Brands limit: `999999` (unlimited)
      - Prompts limit: `999999` (unlimited)
 
-5. **Verify in Stripe** (Optional)
-   - Go back to Stripe Dashboard → **Subscriptions**
-   - You should see a new subscription with:
-     - Status: `Active`
-     - Amount: `$0.00/month`
-
 ### Step 4: Verify the Setup
 
-1. **Check the Billing Profile**
-   - In AIRank, go to **Billing Settings**
-   - Find your newly created billing profile
+1. **Check in AIRank**
+   - Go to **Billing Settings**
+   - Find your billing profile
    - Verify it shows:
      - Plan: `Enterprise`
      - Status: `Active`
-     - No payment method required ✓
 
 2. **Success!**
    - You now have a $0 enterprise billing profile
-   - It will NOT charge anything
-   - It will NOT affect your ARR calculations
-   - You can attach unlimited workspaces to it
+   - No GraphQL mutations needed
+   - Everything synced automatically via webhook
 
 ---
 
 ## Creating an Invoice-Based Enterprise Account
 
-For enterprise customers who pay via invoice instead of credit card, follow the exact same process as above, but with these modifications:
+For enterprise customers who pay via invoice instead of credit card:
 
-### Modified Step 1: Create Invoice-Specific Price (Optional)
+### Step 1: Create Billing Profile in AIRank
 
-You can either:
-- **Option A**: Use the same $0 price created above (recommended for simplicity)
-- **Option B**: Create a separate price with the actual monthly amount (e.g., `$999/month`) but configure it to not auto-charge
+1. **Create Profile with Customer Name**
+   - Navigate to **Billing Settings** → **Create New Billing Profile**
+   - Use the customer's company name: `"Acme Corp - Enterprise"`
+   - Click **"Create"**
 
-**For Option B:**
-1. In Stripe, create a new Enterprise price
-2. Set the amount to the negotiated monthly fee (e.g., `$999.00`)
-3. In the subscription settings, set **Collection method** to `Send invoice`
-4. This creates a subscription that shows the correct MRR/ARR but doesn't auto-charge
+### Step 2: Set Up Subscription in Stripe
 
-### Modified Step 2: Name the Billing Profile
+1. **Find the Customer in Stripe**
+   - Go to Stripe Dashboard → **Customers**
+   - Search for the company name
 
-When creating the billing profile:
-- Use the customer's company name: `"Acme Corp - Enterprise"`
-- This makes it easy to identify in reports
+2. **Create Invoice-Based Subscription**
+   - Click **"Create subscription"**
+   - Select the **Enterprise** product
+   - Choose or create a price with the negotiated amount (e.g., `$999/month`)
+   - Under **Payment**, select **"Email invoice to the customer"**
+   - Set **Days until due**: `30` (or your preferred terms)
+   - Click **"Start subscription"**
 
-### Additional Step: Set Up Manual Invoicing
+3. **Automatic Sync**
+   - The webhook syncs the subscription to AIRank
+   - The billing profile gets enterprise limits
+   - Stripe will email invoices automatically
 
-1. **In Stripe Dashboard**
-   - Go to **Invoices** → **Create invoice**
-   - Select the customer
-   - Add the line item for their monthly fee
-   - Set due date (e.g., Net 30)
-   - Send the invoice manually each month
+### Benefits of This Approach
 
-2. **Or Use Stripe Billing Automation**
-   - If using Option B above, Stripe will automatically generate invoices
-   - You just need to send them to the customer each month
+- Subscription shows correct MRR/ARR in Stripe
+- Invoices are generated and sent automatically
+- AIRank billing profile stays in sync
+- No manual intervention needed after setup
 
 ---
 
@@ -207,7 +216,7 @@ You can attach multiple demo workspaces to a single billing profile for organize
 
 1. **Create the Billing Profile Once** (follow steps above)
    - Name: `"Internal Demo Account"`
-   - Subscribe to $0 Enterprise plan
+   - Subscribe to $0 Enterprise plan in Stripe
 
 2. **Create 5 Separate Workspaces**
    - Workspace 1: `"Demo - Retail Banking AU"` → attach to billing profile
@@ -240,73 +249,106 @@ You can attach multiple demo workspaces to a single billing profile for organize
 
 ## Troubleshooting
 
-### "Payment method required" Error
+### Webhook Not Syncing
 
-**Problem**: When trying to create a subscription, you get an error saying payment method is required.
-
-**Solution**:
-- Make sure you're using the $0 price ID in Stripe
-- Verify the price shows `$0.00` in the Stripe dashboard
-- If the price is not $0, Stripe will require a payment method
-
-### Subscription Status is "Incomplete"
-
-**Problem**: The subscription is created but shows status `incomplete` instead of `active`.
+**Problem**: Created subscription in Stripe but billing profile not updating.
 
 **Solution**:
-- For $0 subscriptions, this usually auto-resolves within a few seconds
-- Refresh the page and check again
-- If it stays incomplete for more than 1 minute, the price might not be $0
+1. Check webhook endpoint is configured correctly in Stripe
+2. Verify `STRIPE_WEBHOOK_SECRET` environment variable is set
+3. Check application logs for webhook errors
+4. In Stripe → Webhooks, check the endpoint for failed deliveries
 
-### Can't Find the Billing Profile After Creating It
+### "Customer not found" in Stripe
 
-**Problem**: Created a billing profile but can't see it in the list.
-
-**Solution**:
-- Make sure you're logged in as the same user who created it
-- Check that you have `manager` role on the billing profile
-- Try logging out and back in
-- Check the browser console for any errors
-
-### Enterprise Features Not Showing
-
-**Problem**: Attached workspace to enterprise billing profile but still showing free tier limits.
+**Problem**: Can't find the billing profile customer in Stripe.
 
 **Solution**:
-- Verify the subscription was created successfully (check Step 3 response)
-- Check that `currentPlan` field shows `"enterprise"` in the billing profile
-- Try detaching and re-attaching the workspace
-- Check the backend logs for any errors during attachment
+- The customer is created with the billing profile name
+- Search for the exact name you used when creating the billing profile
+- Check the billing profile in AIRank for the `stripeCustomerId` field
 
-### Workspace Shows "Billing Required" Warning
+### Subscription Status Shows "Incomplete"
 
-**Problem**: Workspace shows a warning that billing is required even though it's attached to an enterprise profile.
+**Problem**: Subscription created but shows `incomplete` status.
 
 **Solution**:
-- Check that the billing profile's `planStatus` is `"active"`
-- Verify the `stripeSubscriptionId` field is populated
-- Make sure the workspace's `billingProfileId` matches the enterprise billing profile
-- Contact technical support if the issue persists
+- For $0 subscriptions, this should auto-resolve in a few seconds
+- For paid subscriptions without payment method, the customer needs to pay
+- Check the subscription in Stripe for more details
+
+### Plan Limits Not Updating
+
+**Problem**: Webhook fired but limits didn't change.
+
+**Solution**:
+1. Check that the Stripe product has correct metadata:
+   - `plan_id`: `enterprise` (or `small`, `medium`, etc.)
+   - `brands_limit`: `unlimited` or a number
+   - `prompts_limit`: `unlimited` or a number
+   - `models_limit`: `unlimited` or a number
+   - `allowed_models`: `*` or comma-separated list
+2. Run `scripts/setup-stripe-products.js` to reset product metadata
+
+### Webhook Signature Verification Failed
+
+**Problem**: Logs show "Webhook signature verification failed".
+
+**Solution**:
+- Verify `STRIPE_WEBHOOK_SECRET` matches the secret in Stripe dashboard
+- Make sure you're using the correct endpoint's signing secret
+- Check that the raw request body is being passed (not parsed JSON)
 
 ---
 
 ## Summary Checklist
 
 ### For $0 Demo Accounts:
-- [ ] Created $0 price in Stripe for Enterprise product
-- [ ] Created billing profile in AIRank
-- [ ] Subscribed billing profile to $0 Enterprise plan via GraphQL
-- [ ] Verified subscription is active in Stripe
+- [ ] Stripe webhook configured (one-time setup)
+- [ ] Created $0 price in Stripe for Enterprise product (one-time)
+- [ ] Created billing profile in AIRank UI
+- [ ] Found customer in Stripe and created $0 subscription
+- [ ] Verified webhook synced the plan automatically
 - [ ] Attached workspace(s) to billing profile
-- [ ] Verified enterprise features are enabled
 
 ### For Invoice-Based Enterprise:
-- [ ] Created price in Stripe (either $0 or actual amount with manual invoicing)
-- [ ] Created billing profile with customer name
-- [ ] Subscribed billing profile to enterprise plan
-- [ ] Set up manual invoicing process (if applicable)
+- [ ] Stripe webhook configured (one-time setup)
+- [ ] Created billing profile with customer name in AIRank UI
+- [ ] Found customer in Stripe
+- [ ] Created subscription with invoice payment method
+- [ ] Verified webhook synced the plan automatically
 - [ ] Attached customer workspace to billing profile
-- [ ] Sent first invoice to customer (if applicable)
+
+---
+
+## Technical Details
+
+### Webhook Events Handled
+
+| Event | Action |
+|-------|--------|
+| `customer.subscription.created` | Syncs plan limits from Stripe product metadata |
+| `customer.subscription.updated` | Updates plan limits when subscription changes |
+| `customer.subscription.deleted` | Resets billing profile to free tier |
+| `invoice.payment_failed` | Sets 30-day grace period |
+| `invoice.payment_succeeded` | Clears payment failure flags |
+
+### Plan Metadata Structure
+
+Stripe products should have these metadata fields:
+
+```json
+{
+  "plan_id": "enterprise",
+  "brands_limit": "unlimited",
+  "prompts_limit": "unlimited",
+  "models_limit": "unlimited",
+  "data_retention_days": "unlimited",
+  "allowed_models": "*",
+  "batch_frequency": "custom",
+  "prompt_character_limit": "150"
+}
+```
 
 ---
 
@@ -315,14 +357,14 @@ You can attach multiple demo workspaces to a single billing profile for organize
 If you encounter any issues not covered in this guide:
 
 1. Check the backend logs for error messages
-2. Verify all IDs are correct (billing profile ID, price ID)
+2. Check Stripe webhook delivery logs
 3. Contact your technical team with:
    - The exact error message
    - The billing profile ID
+   - The Stripe customer ID
    - Screenshots of the issue
-   - What you were trying to do when it failed
 
 ---
 
-**Last Updated**: 2025-11-18
-**Version**: 1.0
+**Last Updated**: 2025-12-14
+**Version**: 2.0 (Webhook-based sync)
