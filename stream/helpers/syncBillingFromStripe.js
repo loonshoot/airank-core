@@ -68,6 +68,8 @@ async function syncBillingFromSubscription(db, billingProfileId, subscription, s
     promptCharacterLimit: entitlements.promptCharacterLimit,
     jobFrequency: entitlements.jobFrequency,
     allowedModels: entitlements.allowedModels,
+    // Payment collection method: 'charge_automatically' (card) or 'send_invoice' (invoice)
+    collectionMethod: subscription.collection_method || 'charge_automatically',
     updatedAt: new Date()
   };
 
