@@ -221,7 +221,10 @@ function enforceModelLimits(enabledModels, modelsLimit, allowedModels = []) {
     const priority = priorityIndex === -1 ? 9999 : priorityIndex;
 
     // Check if model is in allowed list (if allowedModels is specified)
-    const isInAllowedList = allowedModels.length === 0 || allowedModels.includes(modelConfig.modelId);
+    // '*' means all models are allowed
+    const isInAllowedList = allowedModels.length === 0 ||
+      allowedModels.includes('*') ||
+      allowedModels.includes(modelConfig.modelId);
 
     // A model requires upgrade if:
     // 1. It's NOT in the allowed list, OR
